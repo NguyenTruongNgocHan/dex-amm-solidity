@@ -2,24 +2,24 @@ import { ArrowUpDown, Coins, DatabaseZap, PieChart } from "lucide-react";
 
 const items = [
   {
-    icon: <ArrowUpDown size={20} />,
+    icon: <ArrowUpDown size={18} />,
     title: "AMM Trading",
-    desc: "Swap TokenA and TokenB directly through liquidity pools without centralized custody.",
+    desc: "Swap TokenA and TokenB through liquidity pools.",
   },
   {
-    icon: <Coins size={20} />,
-    title: "LP Token Ownership",
-    desc: "Receive ERC20 LP tokens that represent your proportional share of the pool.",
+    icon: <Coins size={18} />,
+    title: "LP Tokens",
+    desc: "Receive ERC20 LP tokens representing your pool share.",
   },
   {
-    icon: <PieChart size={20} />,
+    icon: <PieChart size={18} />,
     title: "Transparent Pricing",
-    desc: "Show price impact, minimum received, slippage, and real-time reserve information.",
+    desc: "Show price impact, slippage, and reserve information.",
   },
   {
-    icon: <DatabaseZap size={20} />,
+    icon: <DatabaseZap size={18} />,
     title: "Blockchain-backed",
-    desc: "Every trade and liquidity action is executed on-chain through smart contracts.",
+    desc: "Trades and liquidity actions are executed on-chain.",
   },
 ];
 
@@ -27,19 +27,15 @@ export default function FeatureGrid() {
   return (
     <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
-        <article
-          key={item.title}
-          className="app-card rounded-[28px] p-6 transition hover:-translate-y-0.5"
-        >
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+        <article key={item.title} className="surface-card p-5">
+          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
             {item.icon}
           </div>
 
-          <h3 className="text-xl font-black tracking-tight text-slate-950">
-            {item.title}
-          </h3>
-
-          <p className="mt-3 text-sm leading-7 text-slate-500">{item.desc}</p>
+          <h3 className="text-lg font-bold text-[var(--text)]">{item.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+            {item.desc}
+          </p>
         </article>
       ))}
     </section>

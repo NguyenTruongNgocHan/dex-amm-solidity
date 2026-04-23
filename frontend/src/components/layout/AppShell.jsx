@@ -1,11 +1,10 @@
 import Navbar from "./Navbar";
-import PageContainer from "./PageContainer";
 
-export default function AppShell({ children }) {
+export default function AppShell({ children, currentPage, onNavigate }) {
   return (
-    <div className="min-h-screen bg-[var(--bg)]">
-      <Navbar />
-      <PageContainer>{children}</PageContainer>
+    <div className="app-shell">
+      <Navbar currentPage={currentPage} onNavigate={onNavigate} />
+      {children}
     </div>
   );
 }

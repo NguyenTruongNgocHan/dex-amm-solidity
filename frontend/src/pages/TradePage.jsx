@@ -1,10 +1,10 @@
 import AppShell from "../components/layout/AppShell";
-import TradeLayout from "../features/trade/TradeLayout";
+import TradePageLayout from "../features/trade/TradePageLayout";
 
-export default function TradePage() {
+export default function TradePage({ onNavigate }) {
   return (
-    <AppShell>
-      <TradeLayout />
+    <AppShell currentPage="trade" onNavigate={onNavigate}>
+      <TradePageLayout />
     </AppShell>
   );
 }
