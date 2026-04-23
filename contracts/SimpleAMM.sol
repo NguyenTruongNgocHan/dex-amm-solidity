@@ -1,16 +1,18 @@
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./LPToken.sol";
 
 contract SimpleAMM {
     IERC20 public immutable tokenA;
     IERC20 public immutable tokenB;
 
+    LPToken public lpToken;
+
     uint256 public reserveA;
     uint256 public reserveB;
 
     uint256 public totalLiquidity;
-    mapping(address => uint256) public liquidityOf;
 
     event LiquidityAdded(
         address indexed provider,
@@ -38,6 +40,7 @@ contract SimpleAMM {
         require(_tokenA != _tokenB, "Tokens must be different");
         tokenA = IERC20(_tokenA);
         tokenB = IERC20(_tokenB);
+        lpToken = new LPToken();
     }
 
     function addLiquidity(
@@ -59,11 +62,11 @@ contract SimpleAMM {
 
         require(liquidityMinted > 0, "Zero liquidity minted");
 
-        liquidityOf[msg.sender] += liquidityMinted;
         totalLiquidity += liquidityMinted;
-
         reserveA += amountA;
         reserveB += amountB;
+
+        lpToken.mint(msg.sender, liquidityMinted);
 
         emit LiquidityAdded(msg.sender, amountA, amountB, liquidityMinted);
     }
@@ -72,16 +75,16 @@ contract SimpleAMM {
         uint256 liquidityAmount
     ) external returns (uint256 amountA, uint256 amountB) {
         require(liquidityAmount > 0, "Invalid liquidity");
-        require(liquidityOf[msg.sender] >= liquidityAmount, "Not enough liquidity");
+        require(lpToken.balanceOf(msg.sender) >= liquidityAmount, "Not enough LP");
 
         amountA = (liquidityAmount * reserveA) / totalLiquidity;
         amountB = (liquidityAmount * reserveB) / totalLiquidity;
 
-        liquidityOf[msg.sender] -= liquidityAmount;
         totalLiquidity -= liquidityAmount;
-
         reserveA -= amountA;
         reserveB -= amountB;
+
+        lpToken.burn(msg.sender, liquidityAmount);
 
         require(tokenA.transfer(msg.sender, amountA), "Transfer A failed");
         require(tokenB.transfer(msg.sender, amountB), "Transfer B failed");
