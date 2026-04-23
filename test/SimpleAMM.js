@@ -1,21 +1,34 @@
-const { expect } = require("chai");
-const hre = require("hardhat");
+import { expect } from "chai";
+import hre from "hardhat";
 
 describe("SimpleAMM", function () {
+  let ethers;
   let owner, alice, bob;
   let tokenA, tokenB, amm;
 
-  const toWei = (value) => hre.ethers.parseUnits(value, 18);
+  const toWei = (value) => ethers.parseUnits(value, 18);
 
   beforeEach(async function () {
-    [owner, alice, bob] = await hre.ethers.getSigners();
+    ({ ethers } = await hre.network.create());
 
-    const MockERC20 = await hre.ethers.getContractFactory("MockERC20");
-    tokenA = await MockERC20.deploy("TokenA", "TKA", toWei("1000000"));
-    tokenB = await MockERC20.deploy("TokenB", "TKB", toWei("1000000"));
+    [owner, alice, bob] = await ethers.getSigners();
 
-    const SimpleAMM = await hre.ethers.getContractFactory("SimpleAMM");
-    amm = await SimpleAMM.deploy(await tokenA.getAddress(), await tokenB.getAddress());
+    tokenA = await ethers.deployContract("MockERC20", [
+      "TokenA",
+      "TKA",
+      toWei("1000000"),
+    ]);
+
+    tokenB = await ethers.deployContract("MockERC20", [
+      "TokenB",
+      "TKB",
+      toWei("1000000"),
+    ]);
+
+    amm = await ethers.deployContract("SimpleAMM", [
+      await tokenA.getAddress(),
+      await tokenB.getAddress(),
+    ]);
 
     await tokenA.mint(alice.address, toWei("10000"));
     await tokenB.mint(alice.address, toWei("10000"));

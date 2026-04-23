@@ -18,8 +18,9 @@
   },
   "homepage": "https://github.com/NguyenTruongNgocHan/dex-amm-solidity#readme",
   "devDependencies": {
-    "@nomicfoundation/hardhat-ethers": "^4.0.9",
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
     "chai": "^6.2.2",
+    "ethers": "^6.16.0",
     "hardhat": "^3.4.1",
     "mocha": "^11.7.5"
   },

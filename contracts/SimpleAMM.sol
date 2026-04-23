@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -136,28 +135,6 @@ contract SimpleAMM {
         require(tokenA.transfer(msg.sender, amountAOut), "Transfer A failed");
 
         emit Swapped(msg.sender, address(tokenB), amountBIn, address(tokenA), amountAOut);
-    }
-
-    function getAmountOut(
-        uint256 amountIn,
-        uint256 reserveIn,
-        uint256 reserveOut
-    ) public pure returns (uint256 amountOut) {
-        require(amountIn > 0, "Invalid input");
-        require(reserveIn > 0 && reserveOut > 0, "Invalid reserves");
-
-        uint256 amountInWithFee = (amountIn * 997) / 1000;
-        amountOut = (amountInWithFee * reserveOut) / (reserveIn + amountInWithFee);
-    }
-
-    function getPriceAinB() external view returns (uint256) {
-        require(reserveA > 0, "No reserve A");
-        return (reserveB * 1e18) / reserveA;
-    }
-
-    function getPriceBinA() external view returns (uint256) {
-        require(reserveB > 0, "No reserve B");
-        return (reserveA * 1e18) / reserveB;
     }
 
     function _min(uint256 x, uint256 y) internal pure returns (uint256) {
