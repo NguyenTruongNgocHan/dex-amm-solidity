@@ -1,39 +1,23 @@
 export default function Button({
   children,
   variant = "primary",
-  fullWidth = false,
+  className = "",
   ...props
 }) {
+  const base =
+    "inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition";
+
   const styles = {
-    primary: {
-      background: "var(--color-primary)",
-      color: "white",
-      border: "1px solid var(--color-primary)",
-    },
-    secondary: {
-      background: "white",
-      color: "var(--color-primary-dark)",
-      border: "1px solid var(--color-primary-border)",
-    },
-    ghost: {
-      background: "transparent",
-      color: "var(--color-text)",
-      border: "1px solid #E2E8F0",
-    },
+    primary:
+      "bg-[var(--primary)] text-white border border-[var(--primary)] hover:opacity-90",
+    secondary:
+      "bg-[var(--surface)] text-[var(--primary-dark)] border border-[var(--primary-border)] hover:bg-[var(--primary-soft)]",
+    ghost:
+      "bg-transparent text-[var(--text)] border border-[var(--border)] hover:bg-[var(--surface-soft)]",
   };
 
   return (
-    <button
-      {...props}
-      style={{
-        ...styles[variant],
-        width: fullWidth ? "100%" : "auto",
-        borderRadius: "14px",
-        padding: "12px 18px",
-        fontWeight: 600,
-        cursor: "pointer",
-      }}
-    >
+    <button className={`${base} ${styles[variant]} ${className}`} {...props}>
       {children}
     </button>
   );

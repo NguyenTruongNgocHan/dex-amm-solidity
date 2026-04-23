@@ -1,47 +1,47 @@
-import Card from "../../components/common/Card";
+import { ArrowUpDown, Coins, DatabaseZap, PieChart } from "lucide-react";
 
 const items = [
   {
+    icon: <ArrowUpDown size={20} />,
     title: "AMM Trading",
-    desc: "Swap tokens using the constant product formula x*y=k with transparent pricing.",
+    desc: "Swap TokenA and TokenB directly through liquidity pools without centralized custody.",
   },
   {
-    title: "Liquidity Pool",
-    desc: "Provide liquidity to pools and receive LP tokens representing your share.",
+    icon: <Coins size={20} />,
+    title: "LP Token Ownership",
+    desc: "Receive ERC20 LP tokens that represent your proportional share of the pool.",
   },
   {
-    title: "Non-custodial",
-    desc: "Your funds stay in your wallet. No centralized custody.",
+    icon: <PieChart size={20} />,
+    title: "Transparent Pricing",
+    desc: "Show price impact, minimum received, slippage, and real-time reserve information.",
+  },
+  {
+    icon: <DatabaseZap size={20} />,
+    title: "Blockchain-backed",
+    desc: "Every trade and liquidity action is executed on-chain through smart contracts.",
   },
 ];
 
 export default function FeatureGrid() {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-        gap: 20,
-        marginTop: 24,
-      }}
-    >
+    <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
       {items.map((item) => (
-        <Card key={item.title} style={{ padding: 24 }}>
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 16,
-              background: "var(--color-primary-soft)",
-              marginBottom: 18,
-            }}
-          />
-          <h3 style={{ margin: "0 0 10px" }}>{item.title}</h3>
-          <p style={{ margin: 0, color: "var(--color-muted)", lineHeight: 1.6 }}>
-            {item.desc}
-          </p>
-        </Card>
+        <article
+          key={item.title}
+          className="app-card rounded-[28px] p-6 transition hover:-translate-y-0.5"
+        >
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+            {item.icon}
+          </div>
+
+          <h3 className="text-xl font-black tracking-tight text-slate-950">
+            {item.title}
+          </h3>
+
+          <p className="mt-3 text-sm leading-7 text-slate-500">{item.desc}</p>
+        </article>
       ))}
-    </div>
+    </section>
   );
 }
