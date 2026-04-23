@@ -1,0 +1,27 @@
+{
+  "name": "dex-amm-solidity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NguyenTruongNgocHan/dex-amm-solidity.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NguyenTruongNgocHan/dex-amm-solidity/issues"
+  },
+  "homepage": "https://github.com/NguyenTruongNgocHan/dex-amm-solidity#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.9",
+    "hardhat": "^3.4.1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}
