@@ -1,30 +1,42 @@
 import { ethers } from "ethers";
 import { CONTRACTS } from "../config/contracts";
 
-import SimpleAMMAbi from "../abi/SimpleAMM.json";
-import MockERC20Abi from "../abi/MockERC20.json";
-import LPTokenAbi from "../abi/LPToken.json";
+import SimpleAMMArtifact from "../abi/SimpleAMM.json";
+import MockERC20Artifact from "../abi/MockERC20.json";
+import LPTokenArtifact from "../abi/LPToken.json";
+
+function getAbi(artifactOrAbi) {
+  return artifactOrAbi.abi ?? artifactOrAbi;
+}
 
 export function getAMM(signerOrProvider) {
-  return new ethers.Contract(CONTRACTS.amm, SimpleAMMAbi, signerOrProvider);
+  return new ethers.Contract(
+    CONTRACTS.amm,
+    getAbi(SimpleAMMArtifact),
+    signerOrProvider
+  );
 }
 
 export function getTokenA(signerOrProvider) {
-  return new ethers.Contract(CONTRACTS.tokenA, MockERC20Abi, signerOrProvider);
+  return new ethers.Contract(
+    CONTRACTS.tokenA,
+    getAbi(MockERC20Artifact),
+    signerOrProvider
+  );
 }
 
 export function getTokenB(signerOrProvider) {
-  return new ethers.Contract(CONTRACTS.tokenB, MockERC20Abi, signerOrProvider);
+  return new ethers.Contract(
+    CONTRACTS.tokenB,
+    getAbi(MockERC20Artifact),
+    signerOrProvider
+  );
 }
 
 export function getLPToken(lpTokenAddress, signerOrProvider) {
-  return new ethers.Contract(lpTokenAddress, LPTokenAbi, signerOrProvider);
-}
-
-export function format18(value) {
-  return ethers.formatUnits(value, 18);
-}
-
-export function parse18(value) {
-  return ethers.parseUnits(value || "0", 18);
+  return new ethers.Contract(
+    lpTokenAddress,
+    getAbi(LPTokenArtifact),
+    signerOrProvider
+  );
 }

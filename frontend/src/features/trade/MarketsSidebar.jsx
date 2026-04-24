@@ -1,17 +1,33 @@
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
 
-const markets = [
-  { symbol: "TKA", name: "Token A", price: "1.0000", change: "+0.00%", active: true },
-  { symbol: "TKB", name: "Token B", price: "0.9093", change: "+0.00%" },
-  { symbol: "LPT", name: "LP Token", price: "1.2040", change: "+0.00%" },
-];
+export default function MarketsSidebar({ ammData }) {
+  const markets = [
+    {
+      symbol: "TKA",
+      name: "Token A",
+      price: ammData?.priceAinB ? `${ammData.priceAinB} TKB` : "0",
+      change: "Pool",
+      active: true,
+    },
+    {
+      symbol: "TKB",
+      name: "Token B",
+      price: "1.0000 TKB",
+      change: "Pool",
+    },
+    {
+      symbol: "LPT",
+      name: "LP Token",
+      price: ammData?.lpBalance ?? "0",
+      change: "Balance",
+    },
+  ];
 
-export default function MarketsSidebar() {
   return (
     <SurfaceCard className="p-4">
       <h3 className="text-[16px] font-bold text-[var(--text)]">Markets</h3>
-      <p className="mt-1 text-sm text-[var(--muted)]">3 tokens available</p>
+      <p className="mt-1 text-sm text-[var(--muted)]">AMM pool tokens</p>
 
       <div className="mt-4 space-y-3">
         {markets.map((item) => (
@@ -41,7 +57,7 @@ export default function MarketsSidebar() {
               </div>
 
               <div className="text-right">
-                <div className="text-[16px] font-bold text-[var(--text)]">
+                <div className="max-w-[92px] truncate text-[14px] font-bold text-[var(--text)]">
                   {item.price}
                 </div>
                 <div className="text-sm font-semibold text-emerald-500">

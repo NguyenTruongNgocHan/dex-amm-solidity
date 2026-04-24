@@ -2,9 +2,14 @@ import AppShell from "../components/layout/AppShell";
 import HeroSection from "../features/home/HeroSection";
 import FeatureGrid from "../features/home/FeatureGrid";
 
-export default function HomePage({ onNavigate }) {
+export default function HomePage({ onNavigate, wallet }) {
   return (
-    <AppShell currentPage="home" onNavigate={onNavigate}>
+    <AppShell
+      currentPage="home"
+      onNavigate={onNavigate}
+      walletAddress={wallet.address}
+      onConnect={wallet.connect}
+    >
       <main className="mx-auto max-w-7xl px-6 py-8">
         <HeroSection onNavigate={onNavigate} />
         <FeatureGrid />

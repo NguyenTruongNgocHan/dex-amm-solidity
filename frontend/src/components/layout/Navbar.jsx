@@ -1,8 +1,14 @@
 import { BarChart3, Moon, Sun, Wallet } from "lucide-react";
 import Button from "../common/Button";
 import useTheme from "../../hooks/useTheme";
+import { shortAddress } from "../../lib/format";
 
-export default function Navbar({ currentPage = "home", onNavigate }) {
+export default function Navbar({
+  currentPage = "home",
+  onNavigate,
+  walletAddress,
+  onConnect,
+}) {
   const { theme, toggleTheme } = useTheme();
 
   const navItem = (key, label) => (
@@ -18,13 +24,15 @@ export default function Navbar({ currentPage = "home", onNavigate }) {
     </button>
   );
 
+  async function handleConnectClick() {
+    console.log("Connect clicked");
+    await onConnect?.();
+  }
+
   return (
     <nav className="border-b border-[var(--border)] bg-[var(--surface)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <button
-          onClick={() => onNavigate?.("home")}
-          className="flex items-center gap-3"
-        >
+        <button onClick={() => onNavigate?.("home")} className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary)] text-white">
             <BarChart3 size={20} />
           </div>
@@ -54,9 +62,9 @@ export default function Navbar({ currentPage = "home", onNavigate }) {
             {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          <Button variant="secondary" className="gap-2">
+          <Button variant="secondary" className="gap-2" onClick={handleConnectClick}>
             <Wallet size={15} />
-            Connect
+            {walletAddress ? shortAddress(walletAddress) : "Connect"}
           </Button>
         </div>
       </div>
