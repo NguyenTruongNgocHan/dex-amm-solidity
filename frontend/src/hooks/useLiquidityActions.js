@@ -35,7 +35,15 @@ export default function useLiquidityActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
-      setStatus?.(error.shortMessage || error.message || "Add liquidity failed.");
+
+      const message =
+        error.reason ||
+        error.shortMessage ||
+        error.message ||
+        "Add liquidity failed.";
+
+      setStatus?.(message);
+      alert(message);
     } finally {
       setPending(false);
     }
@@ -58,9 +66,15 @@ export default function useLiquidityActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
-      setStatus?.(
-        error.shortMessage || error.message || "Remove liquidity failed."
-      );
+
+      const message =
+        error.reason ||
+        error.shortMessage ||
+        error.message ||
+        "Remove liquidity failed.";
+
+      setStatus?.(message);
+      alert(message);
     } finally {
       setPending(false);
     }

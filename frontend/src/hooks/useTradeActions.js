@@ -12,7 +12,6 @@ export default function useTradeActions(signer, reload, setStatus) {
 
     try {
       setPending(true);
-      setStatus?.("Approving TokenA...");
 
       const amm = getAMM(signer);
       const tokenA = getTokenA(signer);
@@ -21,11 +20,11 @@ export default function useTradeActions(signer, reload, setStatus) {
       const parsedAmountIn = parseToken(amountIn);
       const parsedMinAmountOut = parseToken(minAmountOut);
 
+      setStatus?.("Approving TokenA...");
       const approveTx = await tokenA.approve(ammAddress, parsedAmountIn);
       await approveTx.wait();
 
       setStatus?.("Swapping TokenA to TokenB...");
-
       const swapTx = await amm.swapExactTokenAForTokenB(
         parsedAmountIn,
         parsedMinAmountOut
@@ -33,7 +32,6 @@ export default function useTradeActions(signer, reload, setStatus) {
       await swapTx.wait();
 
       setStatus?.("Swap successful.");
-
       await reload?.();
     } catch (error) {
       console.error(error);

@@ -5,6 +5,8 @@ import { formatToken } from "../lib/format";
 const emptyData = {
   reserveA: "0",
   reserveB: "0",
+  reserveARaw: 0n,
+  reserveBRaw: 0n,
   tokenABalance: "0",
   tokenBBalance: "0",
   lpBalance: "0",
@@ -71,6 +73,8 @@ export default function useAMMData(provider, address) {
       setData({
         reserveA: formatToken(reserveARaw),
         reserveB: formatToken(reserveBRaw),
+        reserveARaw,
+        reserveBRaw,
         tokenABalance: formatToken(tokenABalanceRaw),
         tokenBBalance: formatToken(tokenBBalanceRaw),
         lpBalance: formatToken(lpBalanceRaw),

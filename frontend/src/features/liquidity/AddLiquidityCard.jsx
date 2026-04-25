@@ -1,5 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SurfaceCard from "../../components/common/SurfaceCard";
+import {
+  calculateLiquidityPreview,
+  calculatePairedAmount,
+  isValidLiquidityInput,
+} from "../../lib/liquidityMath";
 
 export default function AddLiquidityCard({
   connected,
@@ -9,11 +14,61 @@ export default function AddLiquidityCard({
 }) {
   const [amountA, setAmountA] = useState("100");
   const [amountB, setAmountB] = useState("100");
+  const [lastEdited, setLastEdited] = useState("A");
 
-  const poolRatio = useMemo(() => {
-    if (!ammData.hasLiquidity) return "First deposit sets pool ratio";
-    return `Current ratio: 1 TKA = ${ammData.priceAinB} TKB`;
-  }, [ammData.hasLiquidity, ammData.priceAinB]);
+  const isExistingPool = ammData.hasLiquidity;
+
+  useEffect(() => {
+    if (!isExistingPool) return;
+
+    if (lastEdited === "A") {
+      const pairedB = calculatePairedAmount(
+        amountA,
+        ammData.reserveARaw,
+        ammData.reserveBRaw
+      );
+
+      setAmountB(pairedB);
+    }
+
+    if (lastEdited === "B") {
+      const pairedA = calculatePairedAmount(
+        amountB,
+        ammData.reserveBRaw,
+        ammData.reserveARaw
+      );
+
+      setAmountA(pairedA);
+    }
+  }, [
+    amountA,
+    amountB,
+    lastEdited,
+    isExistingPool,
+    ammData.reserveARaw,
+    ammData.reserveBRaw,
+  ]);
+
+  const lpPreview = useMemo(() => {
+    return calculateLiquidityPreview(
+      amountA,
+      amountB,
+      ammData.reserveARaw,
+      ammData.reserveBRaw,
+      ammData.lpBalance
+    );
+  }, [
+    amountA,
+    amountB,
+    ammData.reserveARaw,
+    ammData.reserveBRaw,
+    ammData.lpBalance,
+  ]);
+
+  const canSubmit =
+    connected &&
+    !liquidity.pending &&
+    isValidLiquidityInput(amountA, amountB);
 
   async function handleAddLiquidity() {
     if (!connected) {
@@ -21,7 +76,19 @@ export default function AddLiquidityCard({
       return;
     }
 
+    if (!isValidLiquidityInput(amountA, amountB)) return;
+
     await liquidity.addLiquidity(amountA, amountB);
+  }
+
+  function handleAmountA(value) {
+    setLastEdited("A");
+    setAmountA(value);
+  }
+
+  function handleAmountB(value) {
+    setLastEdited("B");
+    setAmountB(value);
   }
 
   return (
@@ -31,7 +98,7 @@ export default function AddLiquidityCard({
           Add Liquidity
         </h3>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Deposit TokenA and TokenB into the AMM pool.
+          Deposit tokens into the pool using the current AMM ratio.
         </p>
       </div>
 
@@ -40,39 +107,57 @@ export default function AddLiquidityCard({
           label="TokenA Amount"
           symbol="TKA"
           value={amountA}
-          onChange={setAmountA}
+          onChange={handleAmountA}
         />
 
         <TokenInput
           label="TokenB Amount"
           symbol="TKB"
           value={amountB}
-          onChange={setAmountB}
+          onChange={handleAmountB}
+          helper={
+            isExistingPool
+              ? "Auto-calculated from pool ratio"
+              : "First deposit sets initial pool ratio"
+          }
         />
       </div>
 
       <div className="mt-5 rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
-        <InfoRow label="Pool ratio" value={poolRatio} />
-        <InfoRow label="LP Token" value="Minted after deposit" />
+        <InfoRow
+          label="Pool mode"
+          value={isExistingPool ? "Existing pool" : "Initial deposit"}
+        />
+        <InfoRow
+          label="Current ratio"
+          value={
+            isExistingPool
+              ? `1 TKA = ${ammData.priceAinB} TKB`
+              : "Not set yet"
+          }
+        />
+        <InfoRow label="LP preview" value={`~ ${lpPreview} LPT`} />
         <InfoRow label="Action" value="approve → addLiquidity" tone="success" />
       </div>
 
       <button
         onClick={handleAddLiquidity}
-        disabled={liquidity.pending}
+        disabled={connected && !canSubmit}
         className="mt-5 w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {!connected
           ? "Connect Wallet"
           : liquidity.pending
           ? "Processing..."
+          : !isValidLiquidityInput(amountA, amountB)
+          ? "Enter Valid Amounts"
           : "Add Liquidity"}
       </button>
     </SurfaceCard>
   );
 }
 
-function TokenInput({ label, symbol, value, onChange }) {
+function TokenInput({ label, symbol, value, onChange, helper }) {
   return (
     <div>
       <label className="mb-2 block text-sm font-medium text-[var(--text)]">
@@ -91,6 +176,10 @@ function TokenInput({ label, symbol, value, onChange }) {
           </div>
         </div>
       </div>
+
+      {helper ? (
+        <p className="mt-2 text-xs text-[var(--muted)]">{helper}</p>
+      ) : null}
     </div>
   );
 }
@@ -104,7 +193,7 @@ function InfoRow({ label, value, tone = "neutral" }) {
   return (
     <div className="mt-2 flex items-center justify-between gap-4 text-sm first:mt-0">
       <span className="text-[var(--muted)]">{label}</span>
-      <span className={`max-w-[220px] truncate text-right font-bold ${color}`}>
+      <span className={`max-w-[240px] truncate text-right font-bold ${color}`}>
         {value}
       </span>
     </div>
