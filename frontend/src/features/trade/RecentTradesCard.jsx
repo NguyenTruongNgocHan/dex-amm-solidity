@@ -1,7 +1,14 @@
 import { ArrowDownLeft, ArrowUpRight, Plus, RefreshCcw } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 
-export default function RecentTradesCard({ events = [], loading, onRefresh }) {
+export default function RecentTradesCard({
+  events = [],
+  loading,
+  onRefresh,
+  compact = false,
+}) {
+  const visibleEvents = compact ? events.slice(0, 5) : events;
+
   return (
     <SurfaceCard className="p-5">
       <div className="flex items-center justify-between">
@@ -20,10 +27,12 @@ export default function RecentTradesCard({ events = [], loading, onRefresh }) {
       <div className="mt-4 space-y-3">
         {loading ? (
           <EmptyState text="Loading events..." />
-        ) : events.length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <EmptyState text="No on-chain activity yet." />
         ) : (
-          events.map((event) => <ActivityItem key={event.id} event={event} />)
+          visibleEvents.map((event) => (
+            <ActivityItem key={event.id} event={event} />
+          ))
         )}
       </div>
     </SurfaceCard>
@@ -33,7 +42,8 @@ export default function RecentTradesCard({ events = [], loading, onRefresh }) {
 function ActivityItem({ event }) {
   const meta = {
     SWAP: {
-      icon: <ArrowUpRight size={16} />,
+      icon: <ArrowUpRight size={15} />,
+      title: "Swap",
       label: "SWAP",
       badge:
         "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
@@ -41,7 +51,8 @@ function ActivityItem({ event }) {
         "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
     },
     ADD: {
-      icon: <Plus size={16} />,
+      icon: <Plus size={15} />,
+      title: "Add Liquidity",
       label: "ADD",
       badge:
         "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
@@ -49,7 +60,8 @@ function ActivityItem({ event }) {
         "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
     },
     REMOVE: {
-      icon: <ArrowDownLeft size={16} />,
+      icon: <ArrowDownLeft size={15} />,
+      title: "Remove Liquidity",
       label: "REMOVE",
       badge:
         "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
@@ -61,16 +73,16 @@ function ActivityItem({ event }) {
   return (
     <div className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-3">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <div
-            className={`grid h-9 w-9 place-items-center rounded-xl ${meta.iconBox}`}
+            className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${meta.iconBox}`}
           >
             {meta.icon}
           </div>
 
-          <div>
-            <div className="text-sm font-bold text-[var(--text)]">
-              {event.title}
+          <div className="min-w-0">
+            <div className="truncate text-sm font-bold text-[var(--text)]">
+              {meta.title}
             </div>
             <div className="mt-1 text-xs text-[var(--muted)]">
               {event.user} · Block #{event.blockNumber}
@@ -78,16 +90,18 @@ function ActivityItem({ event }) {
           </div>
         </div>
 
-        <div className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${meta.badge}`}>
+        <div
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${meta.badge}`}
+        >
           {meta.label}
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-        <div className="rounded-lg bg-[var(--surface)] px-2 py-2 text-[var(--muted)]">
+        <div className="truncate rounded-lg bg-[var(--surface)] px-2 py-2 text-[var(--muted)]">
           {event.primary}
         </div>
-        <div className="rounded-lg bg-[var(--surface)] px-2 py-2 text-right text-[var(--muted)]">
+        <div className="truncate rounded-lg bg-[var(--surface)] px-2 py-2 text-right text-[var(--muted)]">
           {event.secondary}
         </div>
       </div>

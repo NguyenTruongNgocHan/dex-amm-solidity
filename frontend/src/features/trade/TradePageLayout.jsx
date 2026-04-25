@@ -4,6 +4,7 @@ import MarketOverviewCard from "./MarketOverviewCard";
 import TradeChartMock from "../../components/charts/TradeChartMock";
 import TradePanelCard from "./TradePanelCard";
 import RecentTradesCard from "./RecentTradesCard";
+import PoolInsightStrip from "./PoolInsightStrip";
 
 export default function TradePageLayout({ wallet, amm, trade, activity }) {
   const showStatus = wallet.status || amm.error;
@@ -17,12 +18,22 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
       ) : null}
 
       <aside className="space-y-5 xl:col-span-3">
-        <PortfolioSidebar ammData={amm.data} connected={Boolean(wallet.address)} />
+        <PortfolioSidebar
+          ammData={amm.data}
+          connected={Boolean(wallet.address)}
+        />
         <MarketsSidebar ammData={amm.data} />
       </aside>
 
       <section className="space-y-5 xl:col-span-6">
-        <MarketOverviewCard ammData={amm.data} loading={amm.loading} />
+        <MarketOverviewCard
+          ammData={amm.data}
+          loading={amm.loading}
+          activity={activity}
+        />
+
+        <PoolInsightStrip ammData={amm.data} activity={activity} />
+
         <TradeChartMock ammData={amm.data} />
       </section>
 
@@ -33,10 +44,12 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
           onConnect={wallet.connect}
           trade={trade}
         />
+
         <RecentTradesCard
           events={activity.events}
           loading={activity.loading}
           onRefresh={activity.reloadEvents}
+          compact
         />
       </aside>
     </main>

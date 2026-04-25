@@ -30,9 +30,9 @@ export default function TradeChartMock({ ammData }) {
       </div>
 
       <div className="rounded-[18px] border border-[var(--border)] bg-[linear-gradient(180deg,rgba(45,212,191,0.05),rgba(45,212,191,0.01))] p-4">
-        <svg viewBox="0 0 100 36" className="h-[260px] w-full">
+        <svg viewBox="0 0 100 36" className="h-[220px] w-full">
           <defs>
-            <linearGradient id="chartFillTealReal" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id="chartFillTealPolished" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor="rgba(45,212,191,0.20)" />
               <stop offset="100%" stopColor="rgba(45,212,191,0.01)" />
             </linearGradient>
@@ -40,7 +40,7 @@ export default function TradeChartMock({ ammData }) {
 
           <path
             d="M0,27 C10,24 16,20 25,15 C34,10 42,8 52,9 C63,10 72,16 80,23 C88,29 94,32 100,35 L100,36 L0,36 Z"
-            fill="url(#chartFillTealReal)"
+            fill="url(#chartFillTealPolished)"
           />
           <path
             d="M0,27 C10,24 16,20 25,15 C34,10 42,8 52,9 C63,10 72,16 80,23 C88,29 94,32 100,35"
@@ -54,7 +54,11 @@ export default function TradeChartMock({ ammData }) {
       <div className="mt-5 grid grid-cols-4 gap-4">
         <MiniStat label="Reserve A" value={ammData.reserveA} />
         <MiniStat label="Reserve B" value={ammData.reserveB} tone="success" />
-        <MiniStat label="Pool" value={ammData.hasLiquidity ? "Active" : "Empty"} tone="primary" />
+        <MiniStat
+          label="Pool"
+          value={ammData.hasLiquidity ? "Active" : "Empty"}
+          tone="primary"
+        />
         <MiniStat label="Price" value={ammData.priceAinB} tone="primary" />
       </div>
     </SurfaceCard>

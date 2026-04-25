@@ -23,13 +23,7 @@ export default function TradePanelCard({
   const quote = useMemo(() => {
     try {
       if (!ammData.hasLiquidity) {
-        return {
-          amountOutRaw: 0n,
-          minOutRaw: 0n,
-          estimatedOut: "0",
-          minReceived: "0",
-          priceImpact: "0.00%",
-        };
+        return emptyQuote();
       }
 
       const amountInRaw = parseToken(amount || "0");
@@ -50,26 +44,21 @@ export default function TradePanelCard({
       const spotPrice = reserveBNum / reserveANum;
       const executionPrice = inputNum > 0 ? outputNum / inputNum : 0;
 
-      const priceImpact =
+      const priceImpactNumber =
         spotPrice > 0
-          ? (((spotPrice - executionPrice) / spotPrice) * 100).toFixed(2)
-          : "0.00";
+          ? ((spotPrice - executionPrice) / spotPrice) * 100
+          : 0;
 
       return {
         amountOutRaw,
         minOutRaw,
         estimatedOut: formatQuote(amountOutRaw),
         minReceived: formatQuote(minOutRaw),
-        priceImpact: `${priceImpact}%`,
+        priceImpact: `${priceImpactNumber.toFixed(2)}%`,
+        priceImpactNumber,
       };
     } catch {
-      return {
-        amountOutRaw: 0n,
-        minOutRaw: 0n,
-        estimatedOut: "0",
-        minReceived: "0",
-        priceImpact: "0.00%",
-      };
+      return emptyQuote();
     }
   }, [
     amount,
@@ -79,13 +68,23 @@ export default function TradePanelCard({
     slippageBps,
   ]);
 
+  const impactTone =
+    quote.priceImpactNumber >= 5
+      ? "danger"
+      : quote.priceImpactNumber >= 1
+      ? "warning"
+      : "success";
+
   async function handleSwap() {
     if (!connected) {
       await onConnect?.();
       return;
     }
 
-    await trade.swapTokenAForTokenB(amount, quote.minReceived.replaceAll(",", ""));
+    await trade.swapTokenAForTokenB(
+      amount,
+      quote.minReceived.replaceAll(",", "")
+    );
   }
 
   return (
@@ -103,6 +102,9 @@ export default function TradePanelCard({
         <h3 className="text-[16px] font-bold text-[var(--text)]">
           Swap TokenA → TokenB
         </h3>
+        <p className="mt-1 text-xs text-[var(--muted)]">
+          Uses constant product AMM quote with 0.3% fee.
+        </p>
       </div>
 
       <div className="mt-5">
@@ -124,22 +126,11 @@ export default function TradePanelCard({
         </div>
       </div>
 
-      <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
-        <div className="text-sm text-[var(--muted)]">Estimated output</div>
-
-        <div className="mt-2 text-[32px] font-bold leading-none text-teal-600 dark:text-teal-300">
-          {quote.estimatedOut} TKB
-        </div>
-
-        <InfoRow label="Pool price" value={`${ammData.priceAinB} TKB`} />
-        <InfoRow label="Trading fee" value="0.3%" />
-        <InfoRow label="Price impact" value={quote.priceImpact} tone="warning" />
-        <InfoRow
-          label="Minimum received"
-          value={`${quote.minReceived} TKB`}
-          tone="success"
-        />
-      </div>
+      <QuoteBox
+        ammData={ammData}
+        quote={quote}
+        impactTone={impactTone}
+      />
 
       <div className="mt-5">
         <label className="mb-2 block text-sm font-medium text-[var(--text)]">
@@ -159,6 +150,12 @@ export default function TradePanelCard({
         </select>
       </div>
 
+      {quote.priceImpactNumber >= 5 ? (
+        <div className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+          High price impact. This trade moves the pool price noticeably.
+        </div>
+      ) : null}
+
       <button
         onClick={handleSwap}
         disabled={trade?.pending || !ammData.hasLiquidity}
@@ -176,17 +173,57 @@ export default function TradePanelCard({
   );
 }
 
+function QuoteBox({ ammData, quote, impactTone }) {
+  return (
+    <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
+      <div className="text-sm text-[var(--muted)]">Estimated output</div>
+
+      <div className="mt-2 text-[30px] font-bold leading-none text-teal-600 dark:text-teal-300">
+        {quote.estimatedOut} TKB
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        <InfoRow label="Route" value="TKA → TKB" />
+        <InfoRow label="Pool price" value={`${ammData.priceAinB} TKB`} />
+        <InfoRow label="Trading fee" value="0.3%" />
+        <InfoRow
+          label="Price impact"
+          value={quote.priceImpact}
+          tone={impactTone}
+        />
+        <InfoRow
+          label="Minimum received"
+          value={`${quote.minReceived} TKB`}
+          tone="success"
+        />
+      </div>
+    </div>
+  );
+}
+
 function InfoRow({ label, value, tone = "neutral" }) {
   const toneClass = {
     neutral: "text-[var(--text)]",
     success: "text-emerald-500",
     warning: "text-amber-500",
+    danger: "text-red-500",
   }[tone];
 
   return (
-    <div className="mt-3 flex items-center justify-between gap-4 text-sm">
+    <div className="flex items-center justify-between gap-4 text-sm">
       <span className="text-[var(--muted)]">{label}</span>
-      <span className={`font-bold ${toneClass}`}>{value}</span>
+      <span className={`text-right font-bold ${toneClass}`}>{value}</span>
     </div>
   );
+}
+
+function emptyQuote() {
+  return {
+    amountOutRaw: 0n,
+    minOutRaw: 0n,
+    estimatedOut: "0",
+    minReceived: "0",
+    priceImpact: "0.00%",
+    priceImpactNumber: 0,
+  };
 }
