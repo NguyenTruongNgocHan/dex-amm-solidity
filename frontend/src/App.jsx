@@ -6,11 +6,18 @@ import useWallet from "./hooks/useWallet";
 
 function App() {
   const [page, setPage] = useState("home");
+  const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const wallet = useWallet();
+
+  function refreshActivity() {
+    setActivityRefreshKey((prev) => prev + 1);
+  }
 
   const commonProps = {
     onNavigate: setPage,
     wallet,
+    activityRefreshKey,
+    refreshActivity,
   };
 
   if (page === "trade") return <TradePage {...commonProps} />;

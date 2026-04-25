@@ -3,11 +3,19 @@ import useAMMData from "../hooks/useAMMData";
 import useLiquidityActions from "../hooks/useLiquidityActions";
 import LiquidityPageLayout from "../features/liquidity/LiquidityPageLayout";
 
-export default function LiquidityPage({ onNavigate, wallet }) {
+export default function LiquidityPage({
+  onNavigate,
+  wallet,
+  refreshActivity,
+}) {
   const amm = useAMMData(wallet.provider, wallet.address);
+
   const liquidity = useLiquidityActions(
     wallet.signer,
-    amm.reload,
+    async () => {
+      await amm.reload();
+      refreshActivity?.();
+    },
     wallet.setStatus
   );
 
