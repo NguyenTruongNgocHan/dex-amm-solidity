@@ -1,42 +1,37 @@
 import { useMemo, useState } from "react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 
-export default function TradePanelCard({ wallet, ammData, trade }) {
+export default function TradePanelCard({
+  ammData,
+  connected,
+  onConnect,
+  onRefresh,
+}) {
   const [amount, setAmount] = useState("100");
 
   const estimatedOut = useMemo(() => {
-    const amountNum = Number(amount || "0");
-    const price = Number(ammData?.priceAinB || "0");
+    const input = Number(amount || "0");
+    const price = Number(ammData.priceAinB || "0");
 
-    if (!amountNum || !price) return "0";
+    if (!input || !price) return "0";
 
-    const afterFee = amountNum * 0.997;
-    return (afterFee * price).toFixed(4);
-  }, [amount, ammData?.priceAinB]);
-
-  async function handleSwap() {
-    if (!wallet.address) {
-      await wallet.connect();
-      return;
-    }
-
-    await trade.swapTokenAForTokenB(amount, "0");
-  }
+    return (input * 0.997 * price).toFixed(4);
+  }, [amount, ammData.priceAinB]);
 
   return (
     <SurfaceCard className="p-5">
       <div className="grid grid-cols-2 gap-3">
-        <button className="rounded-xl bg-[var(--primary)] px-4 py-3 text-base font-semibold text-white">
+        <button className="rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white">
           Buy
         </button>
-        <button className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-base font-semibold text-[var(--text)]">
+        <button className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]">
           Sell
         </button>
       </div>
 
       <div className="mt-5">
         <h3 className="text-[16px] font-bold text-[var(--text)]">
-          Trade TokenA → TokenB
+          Preview TokenA → TokenB
         </h3>
       </div>
 
@@ -50,37 +45,35 @@ export default function TradePanelCard({ wallet, ammData, trade }) {
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-transparent text-[42px] font-extrabold leading-none text-[var(--text)] outline-none"
+              className="w-full bg-transparent text-[32px] font-bold leading-none text-[var(--text)] outline-none"
             />
-            <div className="rounded-xl bg-[var(--surface-soft)] px-4 py-3 text-base font-bold text-[var(--text)]">
+            <div className="rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-sm font-bold text-[var(--text)]">
               TKA
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 rounded-[20px] border border-teal-200 bg-teal-50 p-5 dark:border-teal-500/20 dark:bg-teal-500/10">
-        <div className="text-sm text-[var(--muted)]">You will receive</div>
-        <div className="mt-2 text-[40px] font-extrabold leading-none text-teal-600 dark:text-teal-300">
-          {estimatedOut}
-          <span className="block">TKB</span>
+      <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
+        <div className="text-sm text-[var(--muted)]">Estimated output</div>
+        <div className="mt-2 text-[32px] font-bold leading-none text-teal-600 dark:text-teal-300">
+          {estimatedOut} TKB
         </div>
 
-        <InfoRow label="Pool price" value={`${ammData?.priceAinB ?? "0"} TKB`} />
-        <InfoRow label="Trading fee (0.3%)" value="included" />
-        <InfoRow label="Min received" value="0 TKB" tone="success" />
+        <InfoRow label="Pool price" value={`${ammData.priceAinB} TKB`} />
+        <InfoRow label="Fee" value="0.3%" />
+        <InfoRow
+          label="Pool status"
+          value={ammData.hasLiquidity ? "Active" : "Empty"}
+          tone="success"
+        />
       </div>
 
       <button
-        onClick={handleSwap}
-        disabled={trade.pending}
-        className="mt-6 w-full rounded-[18px] bg-[var(--primary)] px-5 py-4 text-lg font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={connected ? onRefresh : onConnect}
+        className="mt-5 w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90"
       >
-        {trade.pending
-          ? "Processing..."
-          : wallet.address
-          ? "Swap TokenA"
-          : "Connect Wallet"}
+        {connected ? "Refresh Pool Data" : "Connect Wallet"}
       </button>
     </SurfaceCard>
   );
@@ -89,7 +82,6 @@ export default function TradePanelCard({ wallet, ammData, trade }) {
 function InfoRow({ label, value, tone = "neutral" }) {
   const toneClass = {
     neutral: "text-[var(--text)]",
-    warning: "text-amber-500",
     success: "text-emerald-500",
   }[tone];
 

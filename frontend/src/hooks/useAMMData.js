@@ -2,67 +2,91 @@ import { useCallback, useEffect, useState } from "react";
 import { getAMM, getLPToken, getTokenA, getTokenB } from "../lib/contracts";
 import { formatToken } from "../lib/format";
 
-export default function useAMMData(provider, signer, address) {
-  const [data, setData] = useState({
-    reserveA: "0",
-    reserveB: "0",
-    tokenABalance: "0",
-    tokenBBalance: "0",
-    lpBalance: "0",
-    lpTokenAddress: "",
-    priceAinB: "0",
-  });
+const emptyData = {
+  reserveA: "0",
+  reserveB: "0",
+  tokenABalance: "0",
+  tokenBBalance: "0",
+  lpBalance: "0",
+  lpTokenAddress: "",
+  priceAinB: "0",
+  priceBinA: "0",
+  tvlLabel: "0",
+  hasLiquidity: false,
+};
 
+export default function useAMMData(provider, address) {
+  const [data, setData] = useState(emptyData);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const reload = useCallback(async () => {
-    if (!provider) return;
+    if (!provider) {
+      setData(emptyData);
+      return;
+    }
 
     try {
       setLoading(true);
+      setError("");
 
       const amm = getAMM(provider);
       const tokenA = getTokenA(provider);
       const tokenB = getTokenB(provider);
 
-      const [reserveA, reserveB, lpTokenAddress] = await Promise.all([
+      const [reserveARaw, reserveBRaw, lpTokenAddress] = await Promise.all([
         amm.reserveA(),
         amm.reserveB(),
         amm.lpToken(),
       ]);
 
-      let tokenABalance = 0n;
-      let tokenBBalance = 0n;
-      let lpBalance = 0n;
+      let tokenABalanceRaw = 0n;
+      let tokenBBalanceRaw = 0n;
+      let lpBalanceRaw = 0n;
 
       if (address) {
         const lpToken = getLPToken(lpTokenAddress, provider);
 
-        [tokenABalance, tokenBBalance, lpBalance] = await Promise.all([
-          tokenA.balanceOf(address),
-          tokenB.balanceOf(address),
-          lpToken.balanceOf(address),
-        ]);
+        [tokenABalanceRaw, tokenBBalanceRaw, lpBalanceRaw] =
+          await Promise.all([
+            tokenA.balanceOf(address),
+            tokenB.balanceOf(address),
+            lpToken.balanceOf(address),
+          ]);
       }
 
-      const reserveANum = Number(formatToken(reserveA, 18, 6));
-      const reserveBNum = Number(formatToken(reserveB, 18, 6));
-      const priceAinB =
-        reserveANum > 0 && reserveBNum > 0
-          ? (reserveBNum / reserveANum).toFixed(4)
-          : "0";
+      const reserveANum = Number(formatToken(reserveARaw, 18, 8).replaceAll(",", ""));
+      const reserveBNum = Number(formatToken(reserveBRaw, 18, 8).replaceAll(",", ""));
+
+      const hasLiquidity = reserveANum > 0 && reserveBNum > 0;
+
+      const priceAinB = hasLiquidity
+        ? (reserveBNum / reserveANum).toFixed(4)
+        : "0";
+
+      const priceBinA = hasLiquidity
+        ? (reserveANum / reserveBNum).toFixed(4)
+        : "0";
 
       setData({
-        reserveA: formatToken(reserveA),
-        reserveB: formatToken(reserveB),
-        tokenABalance: formatToken(tokenABalance),
-        tokenBBalance: formatToken(tokenBBalance),
-        lpBalance: formatToken(lpBalance),
+        reserveA: formatToken(reserveARaw),
+        reserveB: formatToken(reserveBRaw),
+        tokenABalance: formatToken(tokenABalanceRaw),
+        tokenBBalance: formatToken(tokenBBalanceRaw),
+        lpBalance: formatToken(lpBalanceRaw),
         lpTokenAddress,
         priceAinB,
+        priceBinA,
+        tvlLabel: `${formatToken(reserveARaw, 18, 2)} TKA / ${formatToken(
+          reserveBRaw,
+          18,
+          2
+        )} TKB`,
+        hasLiquidity,
       });
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      setError(err.shortMessage || err.message || "Không đọc được AMM data.");
     } finally {
       setLoading(false);
     }
@@ -75,6 +99,7 @@ export default function useAMMData(provider, signer, address) {
   return {
     data,
     loading,
+    error,
     reload,
   };
 }

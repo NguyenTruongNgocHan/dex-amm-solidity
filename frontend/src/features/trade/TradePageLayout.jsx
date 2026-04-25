@@ -5,17 +5,19 @@ import TradeChartMock from "../../components/charts/TradeChartMock";
 import TradePanelCard from "./TradePanelCard";
 import RecentTradesCard from "./RecentTradesCard";
 
-export default function TradePageLayout({ wallet, amm, trade }) {
+export default function TradePageLayout({ wallet, amm }) {
+  const showStatus = wallet.status || amm.error;
+
   return (
     <main className="mx-auto grid max-w-7xl gap-5 px-6 py-5 xl:grid-cols-12">
-      {wallet.status ? (
-        <div className="xl:col-span-12 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)]">
-          {wallet.status}
+      {showStatus ? (
+        <div className="xl:col-span-12 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)]">
+          {wallet.status || amm.error}
         </div>
       ) : null}
 
       <aside className="space-y-5 xl:col-span-3">
-        <PortfolioSidebar ammData={amm.data} />
+        <PortfolioSidebar ammData={amm.data} connected={Boolean(wallet.address)} />
         <MarketsSidebar ammData={amm.data} />
       </aside>
 
@@ -26,9 +28,10 @@ export default function TradePageLayout({ wallet, amm, trade }) {
 
       <aside className="space-y-5 xl:col-span-3">
         <TradePanelCard
-          wallet={wallet}
           ammData={amm.data}
-          trade={trade}
+          connected={Boolean(wallet.address)}
+          onConnect={wallet.connect}
+          onRefresh={amm.reload}
         />
         <RecentTradesCard />
       </aside>
