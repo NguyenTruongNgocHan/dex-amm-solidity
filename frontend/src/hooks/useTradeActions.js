@@ -2,37 +2,42 @@ import { useState } from "react";
 import { getAMM, getTokenA } from "../lib/contracts";
 import { parseToken } from "../lib/format";
 
-export default function useTradeActions(signer, reload, setGlobalStatus) {
+export default function useTradeActions(signer, reload, setStatus) {
   const [pending, setPending] = useState(false);
 
-  async function swapTokenAForTokenB(amount, minAmountOut = "0") {
+  async function swapTokenAForTokenB(amountIn, minAmountOut = "0") {
     if (!signer) {
-      throw new Error("Bạn cần kết nối ví trước.");
+      throw new Error("Wallet is not connected.");
     }
 
     try {
       setPending(true);
+      setStatus?.("Approving TokenA...");
 
       const amm = getAMM(signer);
       const tokenA = getTokenA(signer);
       const ammAddress = await amm.getAddress();
 
-      const amountIn = parseToken(amount);
-      const minOut = parseToken(minAmountOut);
+      const parsedAmountIn = parseToken(amountIn);
+      const parsedMinAmountOut = parseToken(minAmountOut);
 
-      setGlobalStatus?.("Đang approve TokenA...");
-      const approveTx = await tokenA.approve(ammAddress, amountIn);
+      const approveTx = await tokenA.approve(ammAddress, parsedAmountIn);
       await approveTx.wait();
 
-      setGlobalStatus?.("Đang swap TokenA → TokenB...");
-      const swapTx = await amm.swapExactTokenAForTokenB(amountIn, minOut);
+      setStatus?.("Swapping TokenA to TokenB...");
+
+      const swapTx = await amm.swapExactTokenAForTokenB(
+        parsedAmountIn,
+        parsedMinAmountOut
+      );
       await swapTx.wait();
 
-      setGlobalStatus?.("Swap thành công.");
+      setStatus?.("Swap successful.");
+
       await reload?.();
     } catch (error) {
       console.error(error);
-      setGlobalStatus?.(error.shortMessage || error.message || "Swap thất bại.");
+      setStatus?.(error.shortMessage || error.message || "Swap failed.");
     } finally {
       setPending(false);
     }

@@ -5,7 +5,7 @@ export default function TradePanelCard({
   ammData,
   connected,
   onConnect,
-  onRefresh,
+  trade,
 }) {
   const [amount, setAmount] = useState("100");
 
@@ -17,6 +17,15 @@ export default function TradePanelCard({
 
     return (input * 0.997 * price).toFixed(4);
   }, [amount, ammData.priceAinB]);
+
+  async function handleSwap() {
+    if (!connected) {
+      await onConnect?.();
+      return;
+    }
+
+    await trade.swapTokenAForTokenB(amount, "0");
+  }
 
   return (
     <SurfaceCard className="p-5">
@@ -31,7 +40,7 @@ export default function TradePanelCard({
 
       <div className="mt-5">
         <h3 className="text-[16px] font-bold text-[var(--text)]">
-          Preview TokenA → TokenB
+          Swap TokenA → TokenB
         </h3>
       </div>
 
@@ -70,10 +79,17 @@ export default function TradePanelCard({
       </div>
 
       <button
-        onClick={connected ? onRefresh : onConnect}
-        className="mt-5 w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90"
+        onClick={handleSwap}
+        disabled={trade?.pending || !ammData.hasLiquidity}
+        className="mt-5 w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {connected ? "Refresh Pool Data" : "Connect Wallet"}
+        {!connected
+          ? "Connect Wallet"
+          : trade?.pending
+          ? "Processing..."
+          : !ammData.hasLiquidity
+          ? "Pool is Empty"
+          : "Swap TokenA"}
       </button>
     </SurfaceCard>
   );

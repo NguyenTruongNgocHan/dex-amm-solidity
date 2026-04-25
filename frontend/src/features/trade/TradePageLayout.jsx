@@ -5,7 +5,7 @@ import TradeChartMock from "../../components/charts/TradeChartMock";
 import TradePanelCard from "./TradePanelCard";
 import RecentTradesCard from "./RecentTradesCard";
 
-export default function TradePageLayout({ wallet, amm }) {
+export default function TradePageLayout({ wallet, amm, trade }) {
   const showStatus = wallet.status || amm.error;
 
   return (
@@ -31,7 +31,7 @@ export default function TradePageLayout({ wallet, amm }) {
           ammData={amm.data}
           connected={Boolean(wallet.address)}
           onConnect={wallet.connect}
-          onRefresh={amm.reload}
+          trade={trade}
         />
         <RecentTradesCard />
       </aside>
