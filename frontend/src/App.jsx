@@ -2,6 +2,7 @@ import { useState } from "react";
 import HomePage from "./pages/HomePage";
 import TradePage from "./pages/TradePage";
 import LiquidityPage from "./pages/LiquidityPage";
+import DashboardPage from "./pages/DashboardPage";
 import useWallet from "./hooks/useWallet";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
 
   if (page === "trade") return <TradePage {...commonProps} />;
   if (page === "liquidity") return <LiquidityPage {...commonProps} />;
+  if (page === "dashboard") return <DashboardPage {...commonProps} />;
 
   return <HomePage {...commonProps} />;
 }
