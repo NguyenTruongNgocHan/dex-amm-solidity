@@ -19,7 +19,7 @@ export default function DashboardPage({
       walletAddress={wallet.address}
       onConnect={wallet.connect}
     >
-      <div className="grid gap-6">
+      <div className="mx-auto w-full max-w-[1200px] space-y-6">
         <DashboardLayout wallet={wallet} amm={amm} activity={activity} />
 
         <IPFSPanelCard walletAddress={wallet.address} />
