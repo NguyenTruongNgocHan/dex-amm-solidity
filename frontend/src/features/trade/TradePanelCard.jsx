@@ -11,6 +11,11 @@ const SLIPPAGE_OPTIONS = [
   { label: "3%", value: 300 },
 ];
 
+const DIRECTIONS = {
+  A_TO_B: "A_TO_B",
+  B_TO_A: "B_TO_A",
+};
+
 export default function TradePanelCard({
   ammData,
   connected,
@@ -19,6 +24,19 @@ export default function TradePanelCard({
 }) {
   const [amount, setAmount] = useState("100");
   const [slippageBps, setSlippageBps] = useState(100);
+  const [direction, setDirection] = useState(DIRECTIONS.A_TO_B);
+
+  const isAToB = direction === DIRECTIONS.A_TO_B;
+
+  const inputSymbol = isAToB ? "TKA" : "TKB";
+  const outputSymbol = isAToB ? "TKB" : "TKA";
+
+  const reserveInRaw = isAToB ? ammData.reserveARaw : ammData.reserveBRaw;
+  const reserveOutRaw = isAToB ? ammData.reserveBRaw : ammData.reserveARaw;
+
+  const poolPriceLabel = isAToB
+    ? `${ammData.priceAinB} TKB`
+    : `${ammData.priceBinA} TKA`;
 
   const quote = useMemo(() => {
     try {
@@ -30,18 +48,18 @@ export default function TradePanelCard({
 
       const amountOutRaw = getAmountOut(
         amountInRaw,
-        ammData.reserveARaw,
-        ammData.reserveBRaw
+        reserveInRaw,
+        reserveOutRaw
       );
 
       const minOutRaw = applySlippage(amountOutRaw, slippageBps);
 
       const inputNum = Number(amount || "0");
-      const reserveANum = Number(ethers.formatUnits(ammData.reserveARaw, 18));
-      const reserveBNum = Number(ethers.formatUnits(ammData.reserveBRaw, 18));
+      const reserveInNum = Number(ethers.formatUnits(reserveInRaw, 18));
+      const reserveOutNum = Number(ethers.formatUnits(reserveOutRaw, 18));
       const outputNum = Number(ethers.formatUnits(amountOutRaw, 18));
 
-      const spotPrice = reserveBNum / reserveANum;
+      const spotPrice = reserveInNum > 0 ? reserveOutNum / reserveInNum : 0;
       const executionPrice = inputNum > 0 ? outputNum / inputNum : 0;
 
       const priceImpactNumber =
@@ -54,6 +72,7 @@ export default function TradePanelCard({
         minOutRaw,
         estimatedOut: formatQuote(amountOutRaw),
         minReceived: formatQuote(minOutRaw),
+        minReceivedRaw: ethers.formatUnits(minOutRaw, 18),
         priceImpact: `${priceImpactNumber.toFixed(2)}%`,
         priceImpactNumber,
       };
@@ -63,8 +82,8 @@ export default function TradePanelCard({
   }, [
     amount,
     ammData.hasLiquidity,
-    ammData.reserveARaw,
-    ammData.reserveBRaw,
+    reserveInRaw,
+    reserveOutRaw,
     slippageBps,
   ]);
 
@@ -75,32 +94,59 @@ export default function TradePanelCard({
       ? "warning"
       : "success";
 
+  function selectDirection(nextDirection) {
+    setDirection(nextDirection);
+    setAmount("100");
+  }
+
   async function handleSwap() {
     if (!connected) {
       await onConnect?.();
       return;
     }
 
-    await trade.swapTokenAForTokenB(
-      amount,
-      quote.minReceived.replaceAll(",", "")
-    );
+    if (!amount || Number(amount) <= 0) {
+      return;
+    }
+
+    if (isAToB) {
+      await trade.swapTokenAForTokenB(amount, quote.minReceivedRaw);
+    } else {
+      await trade.swapTokenBForTokenA(amount, quote.minReceivedRaw);
+    }
   }
 
   return (
     <SurfaceCard className="p-5">
       <div className="grid grid-cols-2 gap-3">
-        <button className="rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white">
-          Buy
+        <button
+          type="button"
+          onClick={() => selectDirection(DIRECTIONS.A_TO_B)}
+          className={
+            isAToB
+              ? "rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white"
+              : "rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]"
+          }
+        >
+          Buy TKB
         </button>
-        <button className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]">
-          Sell
+
+        <button
+          type="button"
+          onClick={() => selectDirection(DIRECTIONS.B_TO_A)}
+          className={
+            !isAToB
+              ? "rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white"
+              : "rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]"
+          }
+        >
+          Sell TKB
         </button>
       </div>
 
       <div className="mt-5">
         <h3 className="text-[16px] font-bold text-[var(--text)]">
-          Swap TokenA → TokenB
+          Swap {inputSymbol} → {outputSymbol}
         </h3>
         <p className="mt-1 text-xs text-[var(--muted)]">
           Uses constant product AMM quote with 0.3% fee.
@@ -120,7 +166,7 @@ export default function TradePanelCard({
               className="w-full bg-transparent text-[32px] font-bold leading-none text-[var(--text)] outline-none"
             />
             <div className="rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-sm font-bold text-[var(--text)]">
-              TKA
+              {inputSymbol}
             </div>
           </div>
         </div>
@@ -130,6 +176,9 @@ export default function TradePanelCard({
         ammData={ammData}
         quote={quote}
         impactTone={impactTone}
+        inputSymbol={inputSymbol}
+        outputSymbol={outputSymbol}
+        poolPriceLabel={poolPriceLabel}
       />
 
       <div className="mt-5">
@@ -157,8 +206,14 @@ export default function TradePanelCard({
       ) : null}
 
       <button
+        type="button"
         onClick={handleSwap}
-        disabled={trade?.pending || !ammData.hasLiquidity}
+        disabled={
+          trade?.pending ||
+          !ammData.hasLiquidity ||
+          !amount ||
+          Number(amount) <= 0
+        }
         className="mt-5 w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {!connected
@@ -167,24 +222,30 @@ export default function TradePanelCard({
           ? "Processing..."
           : !ammData.hasLiquidity
           ? "Pool is Empty"
-          : "Swap TokenA"}
+          : `Swap ${inputSymbol}`}
       </button>
     </SurfaceCard>
   );
 }
 
-function QuoteBox({ ammData, quote, impactTone }) {
+function QuoteBox({
+  quote,
+  impactTone,
+  inputSymbol,
+  outputSymbol,
+  poolPriceLabel,
+}) {
   return (
     <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
       <div className="text-sm text-[var(--muted)]">Estimated output</div>
 
       <div className="mt-2 text-[30px] font-bold leading-none text-teal-600 dark:text-teal-300">
-        {quote.estimatedOut} TKB
+        {quote.estimatedOut} {outputSymbol}
       </div>
 
       <div className="mt-4 grid gap-2">
-        <InfoRow label="Route" value="TKA → TKB" />
-        <InfoRow label="Pool price" value={`${ammData.priceAinB} TKB`} />
+        <InfoRow label="Route" value={`${inputSymbol} → ${outputSymbol}`} />
+        <InfoRow label="Pool price" value={poolPriceLabel} />
         <InfoRow label="Trading fee" value="0.3%" />
         <InfoRow
           label="Price impact"
@@ -193,7 +254,7 @@ function QuoteBox({ ammData, quote, impactTone }) {
         />
         <InfoRow
           label="Minimum received"
-          value={`${quote.minReceived} TKB`}
+          value={`${quote.minReceived} ${outputSymbol}`}
           tone="success"
         />
       </div>
@@ -223,6 +284,7 @@ function emptyQuote() {
     minOutRaw: 0n,
     estimatedOut: "0",
     minReceived: "0",
+    minReceivedRaw: "0",
     priceImpact: "0.00%",
     priceImpactNumber: 0,
   };
