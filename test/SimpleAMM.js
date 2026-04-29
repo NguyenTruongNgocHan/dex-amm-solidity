@@ -98,4 +98,73 @@ describe("SimpleAMM with LPToken", function () {
       amm.connect(bob).swapExactTokenAForTokenB(toWei("100"), 0)
     ).to.be.revertedWith("Empty pool");
   });
+
+  it("should swap tokenB for tokenA", async function () {
+    await tokenA.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await amm.connect(alice).addLiquidity(toWei("1000"), toWei("1000"));
+
+    await tokenB.connect(bob).approve(await amm.getAddress(), toWei("100"));
+
+    const balanceBefore = await tokenA.balanceOf(bob.address);
+
+    await amm.connect(bob).swapExactTokenBForTokenA(toWei("100"), 0);
+
+    const balanceAfter = await tokenA.balanceOf(bob.address);
+
+    expect(balanceAfter).to.be.gt(balanceBefore);
+    expect(await amm.reserveB()).to.equal(toWei("1100"));
+    expect(await amm.reserveA()).to.be.lt(toWei("1000"));
+  });
+
+  it("should fail swap when minAmountOut is too high", async function () {
+    await tokenA.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await amm.connect(alice).addLiquidity(toWei("1000"), toWei("1000"));
+
+    await tokenA.connect(bob).approve(await amm.getAddress(), toWei("100"));
+
+    await expect(
+      amm.connect(bob).swapExactTokenAForTokenB(
+        toWei("100"),
+        toWei("1000")
+      )
+    ).to.be.revertedWith("Slippage too high");
+  });
+
+  it("should not decrease k after swap because fee stays in pool", async function () {
+    await tokenA.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await amm.connect(alice).addLiquidity(toWei("1000"), toWei("1000"));
+
+    const kBefore = (await amm.reserveA()) * (await amm.reserveB());
+
+    await tokenA.connect(bob).approve(await amm.getAddress(), toWei("100"));
+    await amm.connect(bob).swapExactTokenAForTokenB(toWei("100"), 0);
+
+    const kAfter = (await amm.reserveA()) * (await amm.reserveB());
+
+    expect(kAfter).to.be.gte(kBefore);
+  });
+
+  it("should emit events for liquidity and swap actions", async function () {
+    await tokenA.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+
+    await expect(
+      amm.connect(alice).addLiquidity(toWei("1000"), toWei("1000"))
+    ).to.emit(amm, "LiquidityAdded");
+
+    await tokenA.connect(bob).approve(await amm.getAddress(), toWei("100"));
+
+    await expect(
+      amm.connect(bob).swapExactTokenAForTokenB(toWei("100"), 0)
+    ).to.emit(amm, "Swapped");
+
+    const lpBalance = await lpToken.balanceOf(alice.address);
+
+    await expect(
+      amm.connect(alice).removeLiquidity(lpBalance / 2n)
+    ).to.emit(amm, "LiquidityRemoved");
+  });
 });
