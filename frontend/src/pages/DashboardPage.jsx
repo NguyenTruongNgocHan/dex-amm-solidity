@@ -2,8 +2,13 @@ import AppShell from "../components/layout/AppShell";
 import useAMMData from "../hooks/useAMMData";
 import useAMMEvents from "../hooks/useAMMEvents";
 import DashboardLayout from "../features/dashboard/DashboardLayout";
+import IPFSPanelCard from "../features/ipfs/IPFSPanelCard";
 
-export default function DashboardPage({ onNavigate, wallet, activityRefreshKey }) {
+export default function DashboardPage({
+  onNavigate,
+  wallet,
+  activityRefreshKey,
+}) {
   const amm = useAMMData(wallet.provider, wallet.address);
   const activity = useAMMEvents(wallet.provider, activityRefreshKey);
 
@@ -14,7 +19,11 @@ export default function DashboardPage({ onNavigate, wallet, activityRefreshKey }
       walletAddress={wallet.address}
       onConnect={wallet.connect}
     >
-      <DashboardLayout wallet={wallet} amm={amm} activity={activity} />
+      <div className="grid gap-6">
+        <DashboardLayout wallet={wallet} amm={amm} activity={activity} />
+
+        <IPFSPanelCard walletAddress={wallet.address} />
+      </div>
     </AppShell>
   );
 }
