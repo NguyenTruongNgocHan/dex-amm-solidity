@@ -4,6 +4,8 @@ import { CONTRACTS } from "../config/contracts";
 import SimpleAMMArtifact from "../abi/SimpleAMM.json";
 import MockERC20Artifact from "../abi/MockERC20.json";
 import LPTokenArtifact from "../abi/LPToken.json";
+import DEXRewardTokenArtifact from "../abi/DEXRewardToken.json";
+import StakingRewardsArtifact from "../abi/StakingRewards.json";
 
 function getAbi(artifactOrAbi) {
   return artifactOrAbi.abi ?? artifactOrAbi;
@@ -37,6 +39,22 @@ export function getLPToken(lpTokenAddress, signerOrProvider) {
   return new ethers.Contract(
     lpTokenAddress,
     getAbi(LPTokenArtifact),
+    signerOrProvider
+  );
+}
+
+export function getRewardToken(signerOrProvider) {
+  return new ethers.Contract(
+    CONTRACTS.rewardToken,
+    getAbi(DEXRewardTokenArtifact),
+    signerOrProvider
+  );
+}
+
+export function getStakingRewards(signerOrProvider) {
+  return new ethers.Contract(
+    CONTRACTS.stakingRewards,
+    getAbi(StakingRewardsArtifact),
     signerOrProvider
   );
 }

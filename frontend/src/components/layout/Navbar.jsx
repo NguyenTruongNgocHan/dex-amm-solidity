@@ -14,11 +14,10 @@ export default function Navbar({
   const navItem = (key, label) => (
     <button
       onClick={() => onNavigate?.(key)}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-        currentPage === key
+      className={`rounded-md px-4 py-2 text-sm font-medium transition ${currentPage === key
           ? "bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-white"
           : "text-gray-600 hover:text-gray-900 dark:text-slate-300 dark:hover:text-white"
-      }`}
+        }`}
     >
       {label}
     </button>
@@ -51,6 +50,7 @@ export default function Navbar({
           {navItem("home", "Home")}
           {navItem("trade", "Trade")}
           {navItem("liquidity", "Liquidity")}
+          {navItem("farm", "Farm")}
           {navItem("dashboard", "Dashboard")}
         </div>
 
