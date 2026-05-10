@@ -15,7 +15,7 @@ export default function AppShell({
         walletAddress={walletAddress}
         onConnect={onConnect}
       />
-      {children}
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }

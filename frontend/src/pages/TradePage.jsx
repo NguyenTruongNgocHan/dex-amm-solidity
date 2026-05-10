@@ -2,7 +2,7 @@ import AppShell from "../components/layout/AppShell";
 import TradePageLayout from "../features/trade/TradePageLayout";
 import useAMMData from "../hooks/useAMMData";
 import useTradeActions from "../hooks/useTradeActions";
-import useAMMEvents from "../hooks/useAMMEvents";
+import useSystemEvents from "../hooks/useSystemEvents";
 
 export default function TradePage({
   onNavigate,
@@ -12,12 +12,16 @@ export default function TradePage({
 }) {
   const amm = useAMMData(wallet.provider, wallet.address);
 
-  const trade = useTradeActions(wallet.signer, async () => {
-    await amm.reload();
-    refreshActivity?.();
-  }, wallet.setStatus);
+  const trade = useTradeActions(
+    wallet.signer,
+    async () => {
+      await amm.reload();
+      refreshActivity?.();
+    },
+    wallet.setStatus
+  );
 
-  const activity = useAMMEvents(wallet.provider, activityRefreshKey);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey);
 
   return (
     <AppShell

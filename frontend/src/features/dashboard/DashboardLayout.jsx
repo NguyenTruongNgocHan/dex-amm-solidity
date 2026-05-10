@@ -1,35 +1,51 @@
-import DashboardHeader from "./DashboardHeader";
+import { LayoutDashboard } from "lucide-react";
+import PageHero from "../../components/common/PageHero";
+import StatusBanner from "../../components/common/StatusBanner";
 import PoolAnalyticsCard from "./PoolAnalyticsCard";
 import WalletOverviewCard from "./WalletOverviewCard";
 import LPPositionCard from "./LPPositionCard";
 import ActivityAnalyticsCard from "./ActivityAnalyticsCard";
-import DashboardActivityCard from "./DashboardActivityCard";
 import PriceOverviewCard from "./PriceOverviewCard";
+import IPFSPanelCard from "../ipfs/IPFSPanelCard";
+import SystemActivityCard from "../activity/SystemActivityCard";
+import Button from "../../components/common/Button";
 
 export default function DashboardLayout({ wallet, amm, activity }) {
   const showStatus = wallet.status || amm.error;
+  const connected = Boolean(wallet.address);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-5">
-      {showStatus ? (
-        <div className="mb-5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--muted)]">
-          {wallet.status || amm.error}
-        </div>
-      ) : null}
+    <main className="mx-auto max-w-7xl px-6 py-6">
+      <PageHero
+        badge="AMM Command Center"
+        icon={<LayoutDashboard size={14} />}
+        title="Monitor the full"
+        highlight="DEX system"
+        description="A unified dashboard for pool reserves, wallet balances, LP ownership, system-wide activity, and off-chain IPFS documents."
+        action={
+          <Button variant={connected ? "secondary" : "primary"} onClick={wallet.connect}>
+            {connected ? "Wallet Connected" : "Connect Wallet"}
+          </Button>
+        }
+        stats={[
+          { label: "TVL Snapshot", value: amm.data.tvlLabel },
+          { label: "Total LP Supply", value: amm.data.totalLiquidity },
+          { label: "Recent Events", value: activity.allEvents?.length || activity.events?.length || 0 },
+        ]}
+      />
 
-      <DashboardHeader connected={Boolean(wallet.address)} onConnect={wallet.connect} />
+      <StatusBanner message={showStatus} className="mt-5" />
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-12">
+      <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <section className="space-y-5 xl:col-span-8">
           <div className="grid gap-5 md:grid-cols-2">
             <PoolAnalyticsCard ammData={amm.data} loading={amm.loading} />
             <PriceOverviewCard ammData={amm.data} />
           </div>
-
-          <ActivityAnalyticsCard events={activity.events} />
-
-          <DashboardActivityCard
+          <ActivityAnalyticsCard events={activity.allEvents || activity.events} />
+          <SystemActivityCard
             events={activity.events}
+            allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
           />
@@ -38,15 +54,15 @@ export default function DashboardLayout({ wallet, amm, activity }) {
         <aside className="space-y-5 xl:col-span-4">
           <WalletOverviewCard
             ammData={amm.data}
-            connected={Boolean(wallet.address)}
+            connected={connected}
             address={wallet.address}
           />
-
-          <LPPositionCard
-            ammData={amm.data}
-            connected={Boolean(wallet.address)}
-          />
+          <LPPositionCard ammData={amm.data} connected={connected} />
         </aside>
+      </div>
+
+      <div className="mt-6">
+        <IPFSPanelCard walletAddress={wallet.address} />
       </div>
     </main>
   );

@@ -2,11 +2,18 @@ import { useState } from "react";
 import { getAMM, getTokenA, getTokenB } from "../lib/contracts";
 import { parseToken } from "../lib/format";
 
+function getErrorMessage(error, fallback) {
+  return error?.reason || error?.shortMessage || error?.message || fallback;
+}
+
 export default function useLiquidityActions(signer, reload, setStatus) {
   const [pending, setPending] = useState(false);
 
   async function addLiquidity(amountA, amountB) {
-    if (!signer) throw new Error("Wallet is not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       setPending(true);
@@ -35,22 +42,17 @@ export default function useLiquidityActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
-
-      const message =
-        error.reason ||
-        error.shortMessage ||
-        error.message ||
-        "Add liquidity failed.";
-
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Add liquidity failed."));
     } finally {
       setPending(false);
     }
   }
 
   async function removeLiquidity(lpAmount) {
-    if (!signer) throw new Error("Wallet is not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       setPending(true);
@@ -66,15 +68,7 @@ export default function useLiquidityActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
-
-      const message =
-        error.reason ||
-        error.shortMessage ||
-        error.message ||
-        "Remove liquidity failed.";
-
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Remove liquidity failed."));
     } finally {
       setPending(false);
     }

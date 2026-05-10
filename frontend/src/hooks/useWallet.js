@@ -14,14 +14,11 @@ export default function useWallet() {
 
   async function connect() {
     try {
-      console.log("useWallet.connect called");
-
       if (!window.ethereum) {
         throw new Error("MetaMask is not installed.");
       }
 
       setStatus("Connecting MetaMask...");
-
       await ensureHardhatNetwork();
 
       const result = await connectWallet();
@@ -31,12 +28,9 @@ export default function useWallet() {
       setAddress(result.address);
       setChainId(result.chainId);
       setStatus("Wallet connected.");
-
-      console.log("Connected:", result.address);
     } catch (error) {
       console.error(error);
       setStatus(error.shortMessage || error.message || "Failed to connect wallet.");
-      alert(error.shortMessage || error.message || "Failed to connect wallet.");
     }
   }
 
@@ -59,6 +53,7 @@ export default function useWallet() {
       setSigner(signer);
       setAddress(accounts[0]);
       setChainId(Number(network.chainId));
+      setStatus("Wallet account changed.");
     };
 
     const onChainChanged = () => {

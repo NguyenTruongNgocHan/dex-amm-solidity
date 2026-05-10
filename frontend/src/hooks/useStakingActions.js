@@ -3,12 +3,7 @@ import { ethers } from "ethers";
 import { getAMM, getLPToken, getStakingRewards } from "../lib/contracts";
 
 function getErrorMessage(error, fallback) {
-  return (
-    error?.reason ||
-    error?.shortMessage ||
-    error?.message ||
-    fallback
-  );
+  return error?.reason || error?.shortMessage || error?.message || fallback;
 }
 
 function validateAmount(amount) {
@@ -21,17 +16,18 @@ export default function useStakingActions(signer, refresh, setStatus) {
   const [pending, setPending] = useState(false);
 
   async function stake(amount) {
-    if (!signer) throw new Error("Wallet not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       validateAmount(amount);
       setPending(true);
 
       const parsedAmount = ethers.parseUnits(amount, 18);
-
       const amm = getAMM(signer);
       const lpTokenAddress = await amm.lpToken();
-
       const lpToken = getLPToken(lpTokenAddress, signer);
       const stakingRewards = getStakingRewards(signer);
       const stakingAddress = await stakingRewards.getAddress();
@@ -48,16 +44,17 @@ export default function useStakingActions(signer, refresh, setStatus) {
       await refresh?.();
     } catch (error) {
       console.error(error);
-      const message = getErrorMessage(error, "Stake failed.");
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Stake failed."));
     } finally {
       setPending(false);
     }
   }
 
   async function withdraw(amount) {
-    if (!signer) throw new Error("Wallet not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       validateAmount(amount);
@@ -74,20 +71,20 @@ export default function useStakingActions(signer, refresh, setStatus) {
       await refresh?.();
     } catch (error) {
       console.error(error);
-      const message = getErrorMessage(error, "Withdraw failed.");
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Withdraw failed."));
     } finally {
       setPending(false);
     }
   }
 
   async function claimReward() {
-    if (!signer) throw new Error("Wallet not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       setPending(true);
-
       const stakingRewards = getStakingRewards(signer);
 
       setStatus?.("Claiming DRX reward...");
@@ -98,20 +95,20 @@ export default function useStakingActions(signer, refresh, setStatus) {
       await refresh?.();
     } catch (error) {
       console.error(error);
-      const message = getErrorMessage(error, "Claim reward failed.");
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Claim reward failed."));
     } finally {
       setPending(false);
     }
   }
 
   async function exit() {
-    if (!signer) throw new Error("Wallet not connected.");
+    if (!signer) {
+      setStatus?.("Please connect wallet first.");
+      return;
+    }
 
     try {
       setPending(true);
-
       const stakingRewards = getStakingRewards(signer);
 
       setStatus?.("Exiting farm...");
@@ -122,9 +119,7 @@ export default function useStakingActions(signer, refresh, setStatus) {
       await refresh?.();
     } catch (error) {
       console.error(error);
-      const message = getErrorMessage(error, "Exit farm failed.");
-      setStatus?.(message);
-      alert(message);
+      setStatus?.(getErrorMessage(error, "Exit farm failed."));
     } finally {
       setPending(false);
     }
