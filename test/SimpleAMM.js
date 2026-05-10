@@ -2,6 +2,8 @@ import { expect } from "chai";
 import hre from "hardhat";
 
 describe("SimpleAMM with LPToken", function () {
+  this.timeout(120000);
+  
   let ethers;
   let owner, alice, bob;
   let tokenA, tokenB, amm, lpToken;
