@@ -1,64 +1,137 @@
+import { useState } from "react";
 import { ethers } from "ethers";
 import { getAMM, getLPToken, getStakingRewards } from "../lib/contracts";
 
-export default function useStakingActions(signer, refresh) {
+function getErrorMessage(error, fallback) {
+  return (
+    error?.reason ||
+    error?.shortMessage ||
+    error?.message ||
+    fallback
+  );
+}
+
+function validateAmount(amount) {
+  if (!amount || Number(amount) <= 0) {
+    throw new Error("Please enter an amount greater than 0.");
+  }
+}
+
+export default function useStakingActions(signer, refresh, setStatus) {
+  const [pending, setPending] = useState(false);
+
   async function stake(amount) {
-    if (!signer) throw new Error("Wallet not connected");
+    if (!signer) throw new Error("Wallet not connected.");
 
-    const parsedAmount = ethers.parseUnits(amount, 18);
+    try {
+      validateAmount(amount);
+      setPending(true);
 
-    const amm = getAMM(signer);
-    const lpTokenAddress = await amm.lpToken();
+      const parsedAmount = ethers.parseUnits(amount, 18);
 
-    const lpToken = getLPToken(lpTokenAddress, signer);
-    const stakingRewards = getStakingRewards(signer);
+      const amm = getAMM(signer);
+      const lpTokenAddress = await amm.lpToken();
 
-    const stakingAddress = await stakingRewards.getAddress();
+      const lpToken = getLPToken(lpTokenAddress, signer);
+      const stakingRewards = getStakingRewards(signer);
+      const stakingAddress = await stakingRewards.getAddress();
 
-    const approveTx = await lpToken.approve(stakingAddress, parsedAmount);
-    await approveTx.wait();
+      setStatus?.("Approving LP Token...");
+      const approveTx = await lpToken.approve(stakingAddress, parsedAmount);
+      await approveTx.wait();
 
-    const stakeTx = await stakingRewards.stake(parsedAmount);
-    await stakeTx.wait();
+      setStatus?.("Staking LP Token...");
+      const stakeTx = await stakingRewards.stake(parsedAmount);
+      await stakeTx.wait();
 
-    refresh?.();
+      setStatus?.("Stake successful.");
+      await refresh?.();
+    } catch (error) {
+      console.error(error);
+      const message = getErrorMessage(error, "Stake failed.");
+      setStatus?.(message);
+      alert(message);
+    } finally {
+      setPending(false);
+    }
   }
 
   async function withdraw(amount) {
-    if (!signer) throw new Error("Wallet not connected");
+    if (!signer) throw new Error("Wallet not connected.");
 
-    const parsedAmount = ethers.parseUnits(amount, 18);
-    const stakingRewards = getStakingRewards(signer);
+    try {
+      validateAmount(amount);
+      setPending(true);
 
-    const tx = await stakingRewards.withdraw(parsedAmount);
-    await tx.wait();
+      const parsedAmount = ethers.parseUnits(amount, 18);
+      const stakingRewards = getStakingRewards(signer);
 
-    refresh?.();
+      setStatus?.("Withdrawing LP Token...");
+      const tx = await stakingRewards.withdraw(parsedAmount);
+      await tx.wait();
+
+      setStatus?.("Withdraw successful.");
+      await refresh?.();
+    } catch (error) {
+      console.error(error);
+      const message = getErrorMessage(error, "Withdraw failed.");
+      setStatus?.(message);
+      alert(message);
+    } finally {
+      setPending(false);
+    }
   }
 
   async function claimReward() {
-    if (!signer) throw new Error("Wallet not connected");
+    if (!signer) throw new Error("Wallet not connected.");
 
-    const stakingRewards = getStakingRewards(signer);
+    try {
+      setPending(true);
 
-    const tx = await stakingRewards.claimReward();
-    await tx.wait();
+      const stakingRewards = getStakingRewards(signer);
 
-    refresh?.();
+      setStatus?.("Claiming DRX reward...");
+      const tx = await stakingRewards.claimReward();
+      await tx.wait();
+
+      setStatus?.("Claim reward successful.");
+      await refresh?.();
+    } catch (error) {
+      console.error(error);
+      const message = getErrorMessage(error, "Claim reward failed.");
+      setStatus?.(message);
+      alert(message);
+    } finally {
+      setPending(false);
+    }
   }
 
   async function exit() {
-    if (!signer) throw new Error("Wallet not connected");
+    if (!signer) throw new Error("Wallet not connected.");
 
-    const stakingRewards = getStakingRewards(signer);
+    try {
+      setPending(true);
 
-    const tx = await stakingRewards.exit();
-    await tx.wait();
+      const stakingRewards = getStakingRewards(signer);
 
-    refresh?.();
+      setStatus?.("Exiting farm...");
+      const tx = await stakingRewards.exit();
+      await tx.wait();
+
+      setStatus?.("Exit farm successful.");
+      await refresh?.();
+    } catch (error) {
+      console.error(error);
+      const message = getErrorMessage(error, "Exit farm failed.");
+      setStatus?.(message);
+      alert(message);
+    } finally {
+      setPending(false);
+    }
   }
 
   return {
+    pending,
     stake,
     withdraw,
     claimReward,
