@@ -31,7 +31,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
 
       <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <aside className="space-y-5 xl:col-span-3">
-          <div className="xl:sticky xl:top-28 xl:space-y-5">
+          <div className="space-y-5 xl:sticky xl:top-28">
             <PortfolioSidebar
               ammData={amm.data}
               connected={Boolean(wallet.address)}
@@ -53,7 +53,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
         </section>
 
         <aside className="space-y-5 xl:col-span-3">
-          <div className="xl:sticky xl:top-28">
+          <div className="space-y-5 xl:sticky xl:top-28">
             <TradePanelCard
               ammData={amm.data}
               connected={Boolean(wallet.address)}
@@ -72,6 +72,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
             title="Recent System Activity"
             description="Recent swap, liquidity, staking, and reward actions across the whole DEX."
             scroll
+            maxHeight="300px"
           />
         </section>
       </div>

@@ -241,3 +241,25 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+.activity-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-border) transparent;
+}
+
+.activity-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.activity-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.activity-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--primary-border);
+}
+
+.activity-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

@@ -37,7 +37,7 @@ export default function LiquidityPageLayout({
 
       <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <section className="space-y-5 xl:col-span-4">
-          <div className="xl:sticky xl:top-28 xl:space-y-5">
+          <div className="space-y-5 xl:sticky xl:top-28">
             <PoolSummaryCard ammData={amm.data} loading={amm.loading} />
             <PositionCard
               ammData={amm.data}
@@ -62,11 +62,12 @@ export default function LiquidityPageLayout({
             title="Recent System Activity"
             description="Recent liquidity, swap, farming, and reward activity."
             scroll
+            maxHeight="330px"
           />
         </section>
 
-        <section className="space-y-5 xl:col-span-3">
-          <div className="xl:sticky xl:top-28">
+        <aside className="space-y-5 xl:col-span-3">
+          <div className="space-y-5 xl:sticky xl:top-28">
             <RemoveLiquidityCard
               connected={Boolean(wallet.address)}
               onConnect={wallet.connect}
@@ -74,7 +75,7 @@ export default function LiquidityPageLayout({
               liquidity={liquidity}
             />
           </div>
-        </section>
+        </aside>
       </div>
     </main>
   );

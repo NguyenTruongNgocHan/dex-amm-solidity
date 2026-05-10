@@ -23,14 +23,20 @@ export default function DashboardLayout({ wallet, amm, activity }) {
         highlight="DEX system"
         description="A unified dashboard for pool reserves, wallet balances, LP ownership, system-wide activity, and off-chain IPFS documents."
         action={
-          <Button variant={connected ? "secondary" : "primary"} onClick={wallet.connect}>
+          <Button
+            variant={connected ? "secondary" : "primary"}
+            onClick={wallet.connect}
+          >
             {connected ? "Wallet Connected" : "Connect Wallet"}
           </Button>
         }
         stats={[
           { label: "TVL Snapshot", value: amm.data.tvlLabel },
           { label: "Total LP Supply", value: amm.data.totalLiquidity },
-          { label: "Recent Events", value: activity.allEvents?.length || activity.events?.length || 0 },
+          {
+            label: "Recent Events",
+            value: activity.allEvents?.length || activity.events?.length || 0,
+          },
         ]}
       />
 
@@ -42,7 +48,11 @@ export default function DashboardLayout({ wallet, amm, activity }) {
             <PoolAnalyticsCard ammData={amm.data} loading={amm.loading} />
             <PriceOverviewCard ammData={amm.data} />
           </div>
-          <ActivityAnalyticsCard events={activity.allEvents || activity.events} />
+
+          <ActivityAnalyticsCard
+            events={activity.allEvents || activity.events}
+          />
+
           <SystemActivityCard
             events={activity.events}
             allEvents={activity.allEvents}
@@ -51,22 +61,26 @@ export default function DashboardLayout({ wallet, amm, activity }) {
             title="Recent System Activity"
             description="A unified timeline for swaps, liquidity operations, LP staking, and DRX rewards."
             scroll
+            maxHeight="360px"
           />
         </section>
 
         <aside className="space-y-5 xl:col-span-4">
-          <WalletOverviewCard
-            ammData={amm.data}
-            connected={connected}
-            address={wallet.address}
-          />
-          <LPPositionCard ammData={amm.data} connected={connected} />
+          <div className="space-y-5 xl:sticky xl:top-28">
+            <WalletOverviewCard
+              ammData={amm.data}
+              connected={connected}
+              address={wallet.address}
+            />
+
+            <LPPositionCard ammData={amm.data} connected={connected} />
+          </div>
         </aside>
       </div>
 
-      <div className="mt-6">
+      <section className="mt-6">
         <IPFSPanelCard walletAddress={wallet.address} />
-      </div>
+      </section>
     </main>
   );
 }

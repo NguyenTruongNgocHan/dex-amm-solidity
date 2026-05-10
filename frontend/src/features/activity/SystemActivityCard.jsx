@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDownUp,
   Copy,
@@ -10,6 +10,7 @@ import {
   Layers,
   LogOut,
   RefreshCcw,
+  Search,
   X,
 } from "lucide-react";
 
@@ -137,39 +138,195 @@ function ActivityRow({ item, detailed = false }) {
   );
 }
 
+function ActivityTableRow({ item }) {
+  const meta = getActivityMeta(item.type);
+
+  return (
+    <div className="grid min-w-[900px] grid-cols-[1.2fr_1fr_0.9fr_0.8fr_1.6fr_44px] items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]">
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={`grid h-10 w-10 shrink-0 place-items-center rounded-2xl ${meta.color}`}
+        >
+          {meta.icon}
+        </div>
+
+        <div className="min-w-0">
+          <div className="truncate text-sm font-black text-[var(--text)]">
+            {item.title}
+          </div>
+          <div
+            className={`mt-1 inline-flex rounded-full px-2 py-1 text-[11px] font-black ${meta.color}`}
+          >
+            {item.secondary || meta.label}
+          </div>
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <div className="text-xs font-bold text-[var(--muted)]">User</div>
+        <div className="mt-1 truncate text-sm font-bold text-[var(--text)]">
+          {item.user || "-"}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-xs font-bold text-[var(--muted)]">Amount</div>
+        <div className="mt-1 text-sm font-black text-[var(--text)]">
+          {item.primary}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-xs font-bold text-[var(--muted)]">Block</div>
+        <div className="mt-1 text-sm font-bold text-[var(--text)]">
+          #{item.blockNumber}
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <div className="text-xs font-bold text-[var(--muted)]">Transaction</div>
+        <div className="mt-1 truncate text-sm font-bold text-[var(--text)]">
+          {item.txHash || "N/A"}
+        </div>
+        {item.source ? (
+          <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-[var(--muted)]">
+            <Database size={11} />
+            {item.source}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex justify-end">
+        {item.txHash ? (
+          <button
+            onClick={() => copyTx(item.txHash)}
+            className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--border)] text-[var(--muted)] transition hover:bg-[var(--surface)]"
+            title="Copy transaction hash"
+          >
+            <Copy size={15} />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function ActivityModal({ open, events, onClose }) {
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("desc");
+  const [type, setType] = useState("ALL");
+
+  const eventTypes = useMemo(() => {
+    const types = Array.from(new Set(events.map((event) => event.type)));
+    return ["ALL", ...types];
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return events
+      .filter((item) => {
+        if (type !== "ALL" && item.type !== type) return false;
+
+        if (!normalizedQuery) return true;
+
+        const haystack = [
+          item.type,
+          item.title,
+          item.user,
+          item.primary,
+          item.secondary,
+          item.description,
+          item.txHash,
+          item.blockNumber,
+          item.source,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedQuery);
+      })
+      .sort((a, b) => {
+        const orderA = Number(a.order || a.blockNumber || 0);
+        const orderB = Number(b.order || b.blockNumber || 0);
+
+        return sort === "desc" ? orderB - orderA : orderA - orderB;
+      });
+  }, [events, query, sort, type]);
+
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4 backdrop-blur-sm dark:bg-black/70">
-      <div className="max-h-[84vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--surface-soft)] px-6 py-5">
-          <div>
-            <h2 className="text-xl font-black text-[var(--text)]">
-              All System Activity
-            </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              Swap, liquidity, staking, and reward events.
-            </p>
+      <div className="flex max-h-[86vh] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] shadow-2xl">
+        <div className="border-b border-[var(--border)] bg-[var(--surface-soft)] px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-[var(--text)]">
+                All System Activity
+              </h2>
+              <p className="mt-1 text-sm text-[var(--muted)]">
+                Search, sort, and review swap, liquidity, staking, and reward
+                events.
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-[var(--border)] text-[var(--muted)] transition hover:bg-[var(--surface)]"
+            >
+              <X size={18} />
+            </button>
           </div>
 
-          <button
-            onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-[var(--border)] text-[var(--muted)] transition hover:bg-[var(--surface)]"
-          >
-            <X size={18} />
-          </button>
+          <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+            <label className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3">
+              <Search size={16} className="text-[var(--muted)]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search by action, wallet, tx hash, block..."
+                className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
+              />
+            </label>
+
+            <select
+              value={type}
+              onChange={(event) => setType(event.target.value)}
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+            >
+              {eventTypes.map((item) => (
+                <option key={item} value={item}>
+                  {item === "ALL" ? "All actions" : item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+              className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+            >
+              <option value="desc">Newest first</option>
+              <option value="asc">Oldest first</option>
+            </select>
+          </div>
+
+          <div className="mt-3 text-xs font-bold text-[var(--muted)]">
+            Showing {filteredEvents.length} / {events.length} activities
+          </div>
         </div>
 
-        <div className="max-h-[64vh] overflow-y-auto p-6">
-          {events.length === 0 ? (
+        <div className="custom-scrollbar flex-1 overflow-auto p-6">
+          {filteredEvents.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] p-8 text-center text-sm text-[var(--muted)]">
-              No system activity yet.
+              No activity matched your search.
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {events.map((item) => (
-                <ActivityRow key={item.id} item={item} detailed />
+            <div className="space-y-3">
+              {filteredEvents.map((item) => (
+                <ActivityTableRow key={item.id} item={item} />
               ))}
             </div>
           )}
@@ -188,6 +345,7 @@ export default function SystemActivityCard({
   description = "Unified history across swap, liquidity, farming, and reward actions.",
   compact = false,
   scroll = false,
+  maxHeight = "360px",
 }) {
   const [open, setOpen] = useState(false);
 
@@ -245,8 +403,9 @@ export default function SystemActivityCard({
         ) : (
           <div
             className={`space-y-3 ${
-              scroll ? "max-h-[360px] overflow-y-auto pr-1" : ""
+              scroll ? "custom-scrollbar overflow-y-auto pr-2" : ""
             }`}
+            style={scroll ? { maxHeight } : undefined}
           >
             {visibleEvents.map((item) => (
               <ActivityRow key={item.id} item={item} />
