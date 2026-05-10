@@ -7,7 +7,12 @@ import RemoveLiquidityCard from "./RemoveLiquidityCard";
 import PositionCard from "./PositionCard";
 import SystemActivityCard from "../activity/SystemActivityCard";
 
-export default function LiquidityPageLayout({ wallet, amm, liquidity, activity }) {
+export default function LiquidityPageLayout({
+  wallet,
+  amm,
+  liquidity,
+  activity,
+}) {
   const showStatus = wallet.status || amm.error;
 
   return (
@@ -19,7 +24,10 @@ export default function LiquidityPageLayout({ wallet, amm, liquidity, activity }
         highlight="earn pool fees"
         description="Add TKA and TKB into the pool, receive ALP liquidity provider tokens, and withdraw your proportional share whenever you want."
         stats={[
-          { label: "Pool Status", value: amm.data.hasLiquidity ? "Active" : "Empty" },
+          {
+            label: "Pool Status",
+            value: amm.data.hasLiquidity ? "Active" : "Empty",
+          },
           { label: "Your LP", value: `${amm.data.lpBalance} ALP` },
           { label: "Pool Share", value: `${amm.data.lpSharePercent}%` },
         ]}
@@ -29,8 +37,13 @@ export default function LiquidityPageLayout({ wallet, amm, liquidity, activity }
 
       <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <section className="space-y-5 xl:col-span-4">
-          <PoolSummaryCard ammData={amm.data} loading={amm.loading} />
-          <PositionCard ammData={amm.data} connected={Boolean(wallet.address)} />
+          <div className="xl:sticky xl:top-28 xl:space-y-5">
+            <PoolSummaryCard ammData={amm.data} loading={amm.loading} />
+            <PositionCard
+              ammData={amm.data}
+              connected={Boolean(wallet.address)}
+            />
+          </div>
         </section>
 
         <section className="space-y-5 xl:col-span-5">
@@ -40,21 +53,27 @@ export default function LiquidityPageLayout({ wallet, amm, liquidity, activity }
             ammData={amm.data}
             liquidity={liquidity}
           />
+
           <SystemActivityCard
             events={activity.events}
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
+            title="Recent System Activity"
+            description="Recent liquidity, swap, farming, and reward activity."
+            scroll
           />
         </section>
 
         <section className="space-y-5 xl:col-span-3">
-          <RemoveLiquidityCard
-            connected={Boolean(wallet.address)}
-            onConnect={wallet.connect}
-            ammData={amm.data}
-            liquidity={liquidity}
-          />
+          <div className="xl:sticky xl:top-28">
+            <RemoveLiquidityCard
+              connected={Boolean(wallet.address)}
+              onConnect={wallet.connect}
+              ammData={amm.data}
+              liquidity={liquidity}
+            />
+          </div>
         </section>
       </div>
     </main>

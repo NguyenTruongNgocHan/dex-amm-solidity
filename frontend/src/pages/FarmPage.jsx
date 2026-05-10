@@ -1,9 +1,11 @@
 import { useState } from "react";
+
 import AppShell from "../components/layout/AppShell";
-import StatusBanner from "../components/common/StatusBanner";
+
 import useStakingData from "../hooks/useStakingData";
 import useStakingActions from "../hooks/useStakingActions";
 import useSystemEvents from "../hooks/useSystemEvents";
+
 import FarmHeader from "../features/farm/FarmHeader";
 import FarmStatsGrid from "../features/farm/FarmStatsGrid";
 import FarmPositionCard from "../features/farm/FarmPositionCard";
@@ -11,6 +13,7 @@ import FarmStakeCard from "../features/farm/FarmStakeCard";
 import FarmRewardCard from "../features/farm/FarmRewardCard";
 import FarmExplainCard from "../features/farm/FarmExplainCard";
 import SystemActivityCard from "../features/activity/SystemActivityCard";
+import StatusBanner from "../components/common/StatusBanner";
 
 export default function FarmPage({
   onNavigate,
@@ -26,10 +29,11 @@ export default function FarmPage({
     refreshKey
   );
 
-  const activity = useSystemEvents(wallet.provider, activityRefreshKey);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 8);
 
-  function reloadFarm() {
+  async function reloadFarm() {
     setRefreshKey((prev) => prev + 1);
+    await activity.reloadEvents();
     refreshActivity?.();
   }
 
@@ -49,8 +53,14 @@ export default function FarmPage({
       onConnect={wallet.connect}
     >
       <main className="mx-auto max-w-7xl px-6 py-6">
-        <FarmHeader connected={connected} onConnect={wallet.connect} />
-        <StatusBanner message={wallet.status} className="mt-4" />
+        <FarmHeader
+          connected={connected}
+          onConnect={wallet.connect}
+          stakingData={stakingData}
+        />
+
+        <StatusBanner message={wallet.status} className="mt-5" />
+
         <FarmStatsGrid stakingData={stakingData} />
 
         <div className="mt-6 grid gap-5 xl:grid-cols-12">
@@ -66,6 +76,7 @@ export default function FarmPage({
               stakingData={stakingData}
               actions={actions}
             />
+
             <FarmRewardCard
               connected={connected}
               onConnect={wallet.connect}
@@ -75,13 +86,17 @@ export default function FarmPage({
           </section>
 
           <aside className="xl:col-span-4">
-            <SystemActivityCard
-              events={activity.events}
-              allEvents={activity.allEvents}
-              loading={activity.loading}
-              onRefresh={activity.reloadEvents}
-              compact
-            />
+            <div className="xl:sticky xl:top-28">
+              <SystemActivityCard
+                events={activity.events}
+                allEvents={activity.allEvents}
+                loading={activity.loading}
+                onRefresh={activity.reloadEvents}
+                title="Recent System Activity"
+                description="Unified history across swap, liquidity, farming, and reward actions."
+                scroll
+              />
+            </div>
           </aside>
         </div>
       </main>

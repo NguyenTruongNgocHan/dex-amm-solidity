@@ -32,20 +32,24 @@ export default function PoolInsightStrip({ ammData, activity }) {
   ];
 
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2">
       {items.map((item) => (
-        <SurfaceCard key={item.label} className="p-4">
+        <SurfaceCard key={item.label} className="p-4" hover>
           <div className="flex items-start gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
               {item.icon}
             </div>
 
             <div className="min-w-0">
-              <div className="text-xs text-[var(--muted)]">{item.label}</div>
-              <div className="mt-1 truncate text-sm font-bold text-[var(--text)]">
+              <div className="text-xs font-bold text-[var(--muted)]">
+                {item.label}
+              </div>
+
+              <div className="mt-1 break-words text-sm font-black text-[var(--text)]">
                 {item.value}
               </div>
-              <div className="mt-1 truncate text-xs text-[var(--muted)]">
+
+              <div className="mt-1 break-words text-xs text-[var(--muted)]">
                 {item.hint}
               </div>
             </div>

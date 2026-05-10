@@ -48,6 +48,9 @@ export default function DashboardLayout({ wallet, amm, activity }) {
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
+            title="Recent System Activity"
+            description="A unified timeline for swaps, liquidity operations, LP staking, and DRX rewards."
+            scroll
           />
         </section>
 

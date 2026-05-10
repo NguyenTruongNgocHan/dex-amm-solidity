@@ -11,17 +11,17 @@ export default function TradePage({
   refreshActivity,
 }) {
   const amm = useAMMData(wallet.provider, wallet.address);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 8);
 
   const trade = useTradeActions(
     wallet.signer,
     async () => {
       await amm.reload();
+      await activity.reloadEvents();
       refreshActivity?.();
     },
     wallet.setStatus
   );
-
-  const activity = useSystemEvents(wallet.provider, activityRefreshKey);
 
   return (
     <AppShell

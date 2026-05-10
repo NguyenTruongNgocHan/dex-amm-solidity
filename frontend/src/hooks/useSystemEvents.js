@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAMM, getStakingRewards } from "../lib/contracts";
 import { formatToken, shortAddress } from "../lib/format";
+import { getTradeReceipts } from "../lib/ipfs";
 
-function safeFormat(value) {
+function safeFormat(value, max = 4) {
   try {
-    return formatToken(value, 18, 4);
+    return formatToken(value, 18, max);
   } catch {
     return "0";
   }
+}
+
+function eventOrder(log) {
+  return Number(log.blockNumber || 0) * 100000 + Number(log.index || 0);
 }
 
 function createActivity(log, payload) {
@@ -15,6 +20,9 @@ function createActivity(log, payload) {
     id: `${log.transactionHash}-${log.index}`,
     txHash: log.transactionHash,
     blockNumber: log.blockNumber,
+    logIndex: log.index,
+    order: eventOrder(log),
+    source: "on-chain",
     ...payload,
   };
 }
@@ -29,6 +37,8 @@ function mapSwapEvent(log) {
     primary: `${safeFormat(args.amountIn)} in`,
     secondary: `${safeFormat(args.amountOut)} out`,
     description: "Token swap through AMM pool",
+    tokenIn: args.tokenIn,
+    tokenOut: args.tokenOut,
   });
 }
 
@@ -97,6 +107,53 @@ function mapRewardPaidEvent(log) {
   });
 }
 
+function mapLocalTradeReceipt(receipt, index) {
+  const createdAtTime = receipt.createdAt
+    ? new Date(receipt.createdAt).getTime()
+    : Date.now() - index;
+
+  return {
+    id: `local-swap-${receipt.txHash || index}`,
+    type: "SWAP",
+    title: "Swap Tokens",
+    user: shortAddress(receipt.trader),
+    primary: `${receipt.amountIn} ${receipt.tokenIn}`,
+    secondary: `${receipt.tokenOut}`,
+    description: "Swap receipt saved off-chain after successful trade",
+    txHash: receipt.txHash,
+    blockNumber: receipt.blockNumber || "-",
+    logIndex: 9999,
+    order: createdAtTime,
+    source: "receipt",
+  };
+}
+
+async function querySafely(contract, filter, fromBlock, latestBlock, mapper) {
+  try {
+    const logs = await contract.queryFilter(filter, fromBlock, latestBlock);
+    return logs.map(mapper);
+  } catch (error) {
+    console.error("Event query failed:", error);
+    return [];
+  }
+}
+
+function mergeAndDedupe(events) {
+  const seen = new Set();
+  const result = [];
+
+  for (const event of events) {
+    const key = `${event.type}-${event.txHash}`;
+
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    result.push(event);
+  }
+
+  return result.sort((a, b) => b.order - a.order);
+}
+
 export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
   const [events, setEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
@@ -104,8 +161,11 @@ export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
 
   const reloadEvents = useCallback(async () => {
     if (!provider) {
-      setEvents([]);
-      setAllEvents([]);
+      const localSwaps = getTradeReceipts().map(mapLocalTradeReceipt);
+      const fallbackEvents = mergeAndDedupe(localSwaps);
+
+      setAllEvents(fallbackEvents);
+      setEvents(fallbackEvents.slice(0, limit));
       return;
     }
 
@@ -116,51 +176,82 @@ export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
       const stakingRewards = getStakingRewards(provider);
 
       const latestBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(latestBlock - 5000, 0);
+      const fromBlock = Math.max(latestBlock - 10000, 0);
 
       const [
-        swapLogs,
-        addLogs,
-        removeLogs,
-        stakeLogs,
-        withdrawStakeLogs,
-        rewardPaidLogs,
+        swaps,
+        adds,
+        removes,
+        stakes,
+        unstakes,
+        claims,
       ] = await Promise.all([
-        amm.queryFilter(amm.filters.Swapped(), fromBlock, latestBlock),
-        amm.queryFilter(amm.filters.LiquidityAdded(), fromBlock, latestBlock),
-        amm.queryFilter(amm.filters.LiquidityRemoved(), fromBlock, latestBlock),
-        stakingRewards.queryFilter(
+        querySafely(
+          amm,
+          amm.filters.Swapped(),
+          fromBlock,
+          latestBlock,
+          mapSwapEvent
+        ),
+        querySafely(
+          amm,
+          amm.filters.LiquidityAdded(),
+          fromBlock,
+          latestBlock,
+          mapAddLiquidityEvent
+        ),
+        querySafely(
+          amm,
+          amm.filters.LiquidityRemoved(),
+          fromBlock,
+          latestBlock,
+          mapRemoveLiquidityEvent
+        ),
+        querySafely(
+          stakingRewards,
           stakingRewards.filters.Staked(),
           fromBlock,
-          latestBlock
+          latestBlock,
+          mapStakeEvent
         ),
-        stakingRewards.queryFilter(
+        querySafely(
+          stakingRewards,
           stakingRewards.filters.Withdrawn(),
           fromBlock,
-          latestBlock
+          latestBlock,
+          mapWithdrawStakeEvent
         ),
-        stakingRewards.queryFilter(
+        querySafely(
+          stakingRewards,
           stakingRewards.filters.RewardPaid(),
           fromBlock,
-          latestBlock
+          latestBlock,
+          mapRewardPaidEvent
         ),
       ]);
 
-      const mergedEvents = [
-        ...swapLogs.map(mapSwapEvent),
-        ...addLogs.map(mapAddLiquidityEvent),
-        ...removeLogs.map(mapRemoveLiquidityEvent),
-        ...stakeLogs.map(mapStakeEvent),
-        ...withdrawStakeLogs.map(mapWithdrawStakeEvent),
-        ...rewardPaidLogs.map(mapRewardPaidEvent),
-      ].sort((a, b) => b.blockNumber - a.blockNumber);
+      const localSwaps = getTradeReceipts().map(mapLocalTradeReceipt);
+
+      const mergedEvents = mergeAndDedupe([
+        ...swaps,
+        ...adds,
+        ...removes,
+        ...stakes,
+        ...unstakes,
+        ...claims,
+        ...localSwaps,
+      ]);
 
       setAllEvents(mergedEvents);
       setEvents(mergedEvents.slice(0, limit));
     } catch (error) {
       console.error("Load system events failed:", error);
-      setEvents([]);
-      setAllEvents([]);
+
+      const localSwaps = getTradeReceipts().map(mapLocalTradeReceipt);
+      const fallbackEvents = mergeAndDedupe(localSwaps);
+
+      setAllEvents(fallbackEvents);
+      setEvents(fallbackEvents.slice(0, limit));
     } finally {
       setLoading(false);
     }

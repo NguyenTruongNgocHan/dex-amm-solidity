@@ -1,16 +1,18 @@
-import { Info, Repeat, Sprout } from "lucide-react";
+import { Info, Repeat, Sprout, WalletCards } from "lucide-react";
 
 function Step({ icon, title, description }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
-      <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
+    <div className="flex gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--primary-soft)] text-[var(--primary)]">
         {icon}
       </div>
 
-      <h3 className="font-black text-[var(--text)]">{title}</h3>
-      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-        {description}
-      </p>
+      <div>
+        <h3 className="font-black text-[var(--text)]">{title}</h3>
+        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+          {description}
+        </p>
+      </div>
     </div>
   );
 }
@@ -25,7 +27,7 @@ export default function FarmExplainCard() {
         </h2>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 space-y-3">
         <Step
           icon={<Repeat size={18} />}
           title="1. Add liquidity"
@@ -39,7 +41,7 @@ export default function FarmExplainCard() {
         />
 
         <Step
-          icon={<Info size={18} />}
+          icon={<WalletCards size={18} />}
           title="3. Earn DRX"
           description="Claim DRX rewards over time, then withdraw your ALP whenever you want."
         />

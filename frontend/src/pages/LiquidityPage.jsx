@@ -11,12 +11,13 @@ export default function LiquidityPage({
   refreshActivity,
 }) {
   const amm = useAMMData(wallet.provider, wallet.address);
-  const activity = useSystemEvents(wallet.provider, activityRefreshKey);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 8);
 
   const liquidity = useLiquidityActions(
     wallet.signer,
     async () => {
       await amm.reload();
+      await activity.reloadEvents();
       refreshActivity?.();
     },
     wallet.setStatus

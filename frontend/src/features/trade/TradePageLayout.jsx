@@ -31,11 +31,13 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
 
       <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <aside className="space-y-5 xl:col-span-3">
-          <PortfolioSidebar
-            ammData={amm.data}
-            connected={Boolean(wallet.address)}
-          />
-          <MarketsSidebar ammData={amm.data} />
+          <div className="xl:sticky xl:top-28 xl:space-y-5">
+            <PortfolioSidebar
+              ammData={amm.data}
+              connected={Boolean(wallet.address)}
+            />
+            <MarketsSidebar ammData={amm.data} />
+          </div>
         </aside>
 
         <section className="space-y-5 xl:col-span-6">
@@ -44,25 +46,34 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
             loading={amm.loading}
             activity={activity}
           />
+
           <PoolInsightStrip ammData={amm.data} activity={activity} />
+
           <TradeChartMock ammData={amm.data} />
         </section>
 
         <aside className="space-y-5 xl:col-span-3">
-          <TradePanelCard
-            ammData={amm.data}
-            connected={Boolean(wallet.address)}
-            onConnect={wallet.connect}
-            trade={trade}
-          />
+          <div className="xl:sticky xl:top-28">
+            <TradePanelCard
+              ammData={amm.data}
+              connected={Boolean(wallet.address)}
+              onConnect={wallet.connect}
+              trade={trade}
+            />
+          </div>
+        </aside>
+
+        <section className="xl:col-span-12">
           <SystemActivityCard
             events={activity.events}
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
-            compact
+            title="Recent System Activity"
+            description="Recent swap, liquidity, staking, and reward actions across the whole DEX."
+            scroll
           />
-        </aside>
+        </section>
       </div>
     </main>
   );

@@ -1,21 +1,33 @@
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
-import { getAMM, getLPToken, getRewardToken, getStakingRewards } from "../lib/contracts";
+import {
+  getAMM,
+  getLPToken,
+  getRewardToken,
+  getStakingRewards,
+} from "../lib/contracts";
+import { formatToken } from "../lib/format";
+
+const emptyData = {
+  lpBalance: "0",
+  stakedBalance: "0",
+  earnedReward: "0",
+  rewardBalance: "0",
+  totalStaked: "0",
+  lpTokenAddress: "",
+  loading: false,
+};
 
 export default function useStakingData(walletAddress, provider, refreshKey = 0) {
-  const [data, setData] = useState({
-    lpBalance: "0",
-    stakedBalance: "0",
-    earnedReward: "0",
-    rewardBalance: "0",
-    totalStaked: "0",
-    lpTokenAddress: "",
-    loading: false,
-  });
+  const [data, setData] = useState(emptyData);
 
   useEffect(() => {
+    let mounted = true;
+
     async function load() {
-      if (!provider || !walletAddress) return;
+      if (!provider || !walletAddress) {
+        setData(emptyData);
+        return;
+      }
 
       try {
         setData((prev) => ({ ...prev, loading: true }));
@@ -41,22 +53,34 @@ export default function useStakingData(walletAddress, provider, refreshKey = 0) 
           stakingRewards.totalSupply(),
         ]);
 
+        if (!mounted) return;
+
         setData({
-          lpBalance: ethers.formatUnits(lpBalance, 18),
-          stakedBalance: ethers.formatUnits(stakedBalance, 18),
-          earnedReward: ethers.formatUnits(earnedReward, 18),
-          rewardBalance: ethers.formatUnits(rewardBalance, 18),
-          totalStaked: ethers.formatUnits(totalStaked, 18),
+          lpBalance: formatToken(lpBalance, 18, 4),
+          stakedBalance: formatToken(stakedBalance, 18, 4),
+          earnedReward: formatToken(earnedReward, 18, 6),
+          rewardBalance: formatToken(rewardBalance, 18, 4),
+          totalStaked: formatToken(totalStaked, 18, 4),
           lpTokenAddress,
           loading: false,
         });
       } catch (error) {
         console.error("Failed to load staking data:", error);
-        setData((prev) => ({ ...prev, loading: false }));
+
+        if (!mounted) return;
+
+        setData((prev) => ({
+          ...prev,
+          loading: false,
+        }));
       }
     }
 
     load();
+
+    return () => {
+      mounted = false;
+    };
   }, [walletAddress, provider, refreshKey]);
 
   return data;
