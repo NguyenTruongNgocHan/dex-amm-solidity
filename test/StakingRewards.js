@@ -1,11 +1,12 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import hre from "hardhat";
 
 describe("StakingRewards", function () {
   this.timeout(120000);
 
   const REWARD_DURATION = 7 * 24 * 60 * 60;
 
+  let ethers;
   let owner;
   let alice;
   let bob;
@@ -25,23 +26,25 @@ describe("StakingRewards", function () {
   }
 
   beforeEach(async function () {
+    ({ ethers } = await hre.network.create());
+
     [owner, alice, bob] = await ethers.getSigners();
 
     tokenA = await ethers.deployContract("MockERC20", [
       "Token A",
       "TKA",
-      toWei("1000000"),
+      toWei("1000000")
     ]);
 
     tokenB = await ethers.deployContract("MockERC20", [
       "Token B",
       "TKB",
-      toWei("1000000"),
+      toWei("1000000")
     ]);
 
     amm = await ethers.deployContract("SimpleAMM", [
       await tokenA.getAddress(),
-      await tokenB.getAddress(),
+      await tokenB.getAddress()
     ]);
 
     const lpTokenAddress = await amm.lpToken();
@@ -52,49 +55,31 @@ describe("StakingRewards", function () {
     stakingRewards = await ethers.deployContract("StakingRewards", [
       lpTokenAddress,
       await rewardToken.getAddress(),
-      REWARD_DURATION,
+      REWARD_DURATION
     ]);
 
     await tokenA.transfer(alice.address, toWei("10000"));
     await tokenB.transfer(alice.address, toWei("10000"));
 
-    await tokenA
-      .connect(alice)
-      .approve(await amm.getAddress(), toWei("1000"));
-
-    await tokenB
-      .connect(alice)
-      .approve(await amm.getAddress(), toWei("1000"));
+    await tokenA.connect(alice).approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.connect(alice).approve(await amm.getAddress(), toWei("1000"));
 
     await amm.connect(alice).addLiquidity(toWei("1000"), toWei("1000"));
 
-    await rewardToken.mint(
-      await stakingRewards.getAddress(),
-      toWei("50000")
-    );
-
+    await rewardToken.mint(await stakingRewards.getAddress(), toWei("50000"));
     await stakingRewards.notifyRewardAmount(toWei("50000"));
   });
 
   it("should deploy with correct staking token and reward token", async function () {
-    expect(await stakingRewards.stakingToken()).to.equal(
-      await lpToken.getAddress()
-    );
-
-    expect(await stakingRewards.rewardToken()).to.equal(
-      await rewardToken.getAddress()
-    );
-
+    expect(await stakingRewards.stakingToken()).to.equal(await lpToken.getAddress());
+    expect(await stakingRewards.rewardToken()).to.equal(await rewardToken.getAddress());
     expect(await stakingRewards.duration()).to.equal(REWARD_DURATION);
   });
 
   it("should allow user to stake LP tokens", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
-    expect(lpBalance).to.be.greaterThan(0n);
 
-    await lpToken
-      .connect(alice)
-      .approve(await stakingRewards.getAddress(), lpBalance);
+    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
 
     await expect(stakingRewards.connect(alice).stake(lpBalance))
       .to.emit(stakingRewards, "Staked")
@@ -108,50 +93,34 @@ describe("StakingRewards", function () {
   it("should calculate earned rewards over time", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
 
-    await lpToken
-      .connect(alice)
-      .approve(await stakingRewards.getAddress(), lpBalance);
-
+    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
     await stakingRewards.connect(alice).stake(lpBalance);
 
     await increaseTime(3600);
 
-    const earned = await stakingRewards.earned(alice.address);
-
-    expect(earned).to.be.greaterThan(0n);
+    expect(await stakingRewards.earned(alice.address)).to.be.greaterThan(0n);
   });
 
   it("should allow user to claim DRX rewards", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
 
-    await lpToken
-      .connect(alice)
-      .approve(await stakingRewards.getAddress(), lpBalance);
-
+    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
     await stakingRewards.connect(alice).stake(lpBalance);
 
     await increaseTime(3600);
 
-    const earnedBeforeClaim = await stakingRewards.earned(alice.address);
-    expect(earnedBeforeClaim).to.be.greaterThan(0n);
-
     await expect(stakingRewards.connect(alice).claimReward())
       .to.emit(stakingRewards, "RewardPaid");
 
-    const rewardBalance = await rewardToken.balanceOf(alice.address);
-    expect(rewardBalance).to.be.greaterThan(0n);
-
-    const earnedAfterClaim = await stakingRewards.earned(alice.address);
-    expect(earnedAfterClaim).to.equal(0n);
+    expect(await rewardToken.balanceOf(alice.address)).to.be.greaterThan(0n);
+    expect(await stakingRewards.earned(alice.address)).to.equal(0n);
   });
 
   it("should allow user to withdraw staked LP tokens", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
     const stakeAmount = lpBalance / 2n;
 
-    await lpToken
-      .connect(alice)
-      .approve(await stakingRewards.getAddress(), stakeAmount);
+    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), stakeAmount);
 
     await stakingRewards.connect(alice).stake(stakeAmount);
 
@@ -167,10 +136,7 @@ describe("StakingRewards", function () {
   it("should allow user to exit farm", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
 
-    await lpToken
-      .connect(alice)
-      .approve(await stakingRewards.getAddress(), lpBalance);
-
+    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
     await stakingRewards.connect(alice).stake(lpBalance);
 
     await increaseTime(3600);
@@ -203,6 +169,7 @@ describe("StakingRewards", function () {
   it("should only allow owner to notify reward amount", async function () {
     await expect(
       stakingRewards.connect(bob).notifyRewardAmount(toWei("1000"))
-    ).to.be.reverted;
+    ).to.be.revertedWithCustomError(stakingRewards, "OwnableUnauthorizedAccount")
+      .withArgs(bob.address);
   });
 });

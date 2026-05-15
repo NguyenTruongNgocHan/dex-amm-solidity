@@ -1,22 +1,28 @@
 {
   "name": "dex-amm-solidity",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "A portfolio-ready decentralized exchange based on Automated Market Maker",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "node": "hardhat node",
+    "clean": "hardhat clean",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/NguyenTruongNgocHan/dex-amm-solidity.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/NguyenTruongNgocHan/dex-amm-solidity/issues"
-  },
-  "homepage": "https://github.com/NguyenTruongNgocHan/dex-amm-solidity#readme",
+  "keywords": [
+    "blockchain",
+    "dex",
+    "amm",
+    "defi",
+    "solidity",
+    "hardhat"
+  ],
+  "author": "Hanna",
+  "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
     "chai": "^6.2.2",
@@ -26,6 +32,5 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.6.1"
-  },
-  "type": "module"
+  }
 }
