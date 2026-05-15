@@ -3,7 +3,7 @@ import hre from "hardhat";
 
 describe("SimpleAMM with LPToken", function () {
   this.timeout(120000);
-  
+
   let ethers;
   let owner, alice, bob;
   let tokenA, tokenB, amm, lpToken;
@@ -88,8 +88,13 @@ describe("SimpleAMM with LPToken", function () {
   });
 
   it("should fail removeLiquidity if user does not have enough LP tokens", async function () {
+    await tokenA.approve(await amm.getAddress(), toWei("1000"));
+    await tokenB.approve(await amm.getAddress(), toWei("1000"));
+
+    await amm.addLiquidity(toWei("1000"), toWei("1000"));
+
     await expect(
-      amm.connect(alice).removeLiquidity(toWei("1"))
+      amm.connect(bob).removeLiquidity(toWei("1"))
     ).to.be.revertedWith("Not enough LP");
   });
 
