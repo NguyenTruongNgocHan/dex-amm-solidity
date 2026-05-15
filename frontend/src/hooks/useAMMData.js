@@ -96,7 +96,7 @@ export default function useAMMData(provider, address) {
       let lpBalanceRaw = 0n;
 
       if (address) {
-        const lpToken = getLPToken(lpTokenAddress, provider);
+        const lpToken = getLPToken(provider, lpTokenAddress);
 
         [tokenABalanceRaw, tokenBBalanceRaw, lpBalanceRaw] =
           await Promise.all([

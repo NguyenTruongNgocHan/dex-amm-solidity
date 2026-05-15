@@ -5,3 +5,5 @@ cache
 types
 docs
 scripts/interact.js
+deployments
+frontend/src/contracts/address.json

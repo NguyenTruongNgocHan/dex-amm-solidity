@@ -1,9 +1,21 @@
+import deployment from "../contracts/addresses.json";
+
+export const HARDHAT_CHAIN_ID = deployment.chainId || 31337;
+
 export const CONTRACTS = {
-  tokenA: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-  tokenB: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-  amm: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-  rewardToken: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-  stakingRewards: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  tokenA: deployment.contracts.tokenA,
+  tokenB: deployment.contracts.tokenB,
+  amm: deployment.contracts.amm,
+  lpToken: deployment.contracts.lpToken,
+  rewardToken: deployment.contracts.rewardToken,
+  stakingRewards: deployment.contracts.stakingRewards,
 };
 
-export const HARDHAT_CHAIN_ID = 31337;
+export const SYMBOLS = {
+  tokenA: deployment.symbols?.tokenA || "DTA",
+  tokenB: deployment.symbols?.tokenB || "DTB",
+  lpToken: deployment.symbols?.lpToken || "LP-AMM",
+  rewardToken: deployment.symbols?.rewardToken || "DRX",
+};
+
+export const DEPLOYMENT_INFO = deployment;
