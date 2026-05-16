@@ -173,12 +173,12 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "amountA",
+        "name": "amountADesired",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountB",
+        "name": "amountBDesired",
         "type": "uint256"
       }
     ],
@@ -197,12 +197,12 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "amountA",
+        "name": "amountADesired",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountB",
+        "name": "amountBDesired",
         "type": "uint256"
       },
       {
@@ -325,17 +325,51 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "amountA",
+        "name": "amountADesired",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "amountB",
+        "name": "amountBDesired",
         "type": "uint256"
       }
     ],
     "name": "quoteAddLiquidity",
     "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "liquidityMinted",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountADesired",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountBDesired",
+        "type": "uint256"
+      }
+    ],
+    "name": "quoteAddLiquidityAmounts",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountAUsed",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountBUsed",
+        "type": "uint256"
+      },
       {
         "internalType": "uint256",
         "name": "liquidityMinted",

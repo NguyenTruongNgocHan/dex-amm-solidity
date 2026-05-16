@@ -1,10 +1,11 @@
 import { TrendingUp } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function PriceOverviewCard({ ammData }) {
   return (
-    <SurfaceCard className="p-5">
+    <SurfaceCard className="h-full p-5">
       <div className="flex items-center gap-3">
         <IconBadge tone="soft" className="h-10 w-10">
           <TrendingUp size={18} />
@@ -19,14 +20,19 @@ export default function PriceOverviewCard({ ammData }) {
       </div>
 
       <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-5 dark:border-teal-500/20 dark:bg-teal-500/10">
-        <div className="text-sm text-[var(--muted)]">1 TokenA equals</div>
+        <div className="text-sm text-[var(--muted)]">
+          1 {SYMBOLS.tokenA} equals
+        </div>
         <div className="mt-2 text-[34px] font-bold leading-none text-teal-600 dark:text-teal-300">
-          {ammData.priceAinB} TKB
+          {ammData.priceAinB} {SYMBOLS.tokenB}
         </div>
       </div>
 
       <div className="mt-4 grid gap-3">
-        <MetricRow label="1 TKB equals" value={`${ammData.priceBinA} TKA`} />
+        <MetricRow
+          label={`1 ${SYMBOLS.tokenB} equals`}
+          value={`${ammData.priceBinA} ${SYMBOLS.tokenA}`}
+        />
         <MetricRow label="Pricing model" value="x * y = k" />
       </div>
     </SurfaceCard>

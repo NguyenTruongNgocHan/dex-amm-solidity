@@ -1,10 +1,11 @@
 import { Droplets } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function PoolAnalyticsCard({ ammData, loading }) {
   return (
-    <SurfaceCard className="p-5">
+    <SurfaceCard className="h-full p-5">
       <div className="flex items-center gap-3">
         <IconBadge tone="primary" className="h-10 w-10">
           <Droplets size={18} />
@@ -14,14 +15,25 @@ export default function PoolAnalyticsCard({ ammData, loading }) {
           <h3 className="text-[17px] font-bold text-[var(--text)]">
             Pool Analytics
           </h3>
-          <p className="text-sm text-[var(--muted)]">TokenA / TokenB</p>
+          <p className="text-sm text-[var(--muted)]">
+            {SYMBOLS.tokenA} / {SYMBOLS.tokenB}
+          </p>
         </div>
       </div>
 
       <div className="mt-5 grid gap-3">
-        <MetricRow label="Reserve TokenA" value={loading ? "..." : ammData.reserveA} />
-        <MetricRow label="Reserve TokenB" value={loading ? "..." : ammData.reserveB} />
-        <MetricRow label="Pool Price" value={`${ammData.priceAinB} TKB`} />
+        <MetricRow
+          label={`Reserve ${SYMBOLS.tokenA}`}
+          value={loading ? "..." : `${ammData.reserveA} ${SYMBOLS.tokenA}`}
+        />
+        <MetricRow
+          label={`Reserve ${SYMBOLS.tokenB}`}
+          value={loading ? "..." : `${ammData.reserveB} ${SYMBOLS.tokenB}`}
+        />
+        <MetricRow
+          label="Pool Price"
+          value={`${ammData.priceAinB} ${SYMBOLS.tokenB}`}
+        />
         <MetricRow
           label="Status"
           value={ammData.hasLiquidity ? "Active" : "Empty"}

@@ -103,7 +103,7 @@ async function main() {
     symbols: {
       tokenA: "DTA",
       tokenB: "DTB",
-      lpToken: "LP-AMM",
+      lpToken: "ALP",
       rewardToken: "DRX"
     },
     initialPool: {

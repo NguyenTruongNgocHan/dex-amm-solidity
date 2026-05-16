@@ -1,24 +1,25 @@
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function MarketsSidebar({ ammData }) {
   const markets = [
     {
-      symbol: "TKA",
+      symbol: SYMBOLS.tokenA,
       name: "Token A",
-      price: `${ammData.priceAinB} TKB`,
+      price: `${ammData.priceAinB} ${SYMBOLS.tokenB}`,
       change: "AMM",
       active: true,
     },
     {
-      symbol: "TKB",
+      symbol: SYMBOLS.tokenB,
       name: "Token B",
-      price: `${ammData.priceBinA} TKA`,
+      price: `${ammData.priceBinA} ${SYMBOLS.tokenA}`,
       change: "AMM",
       active: false,
     },
     {
-      symbol: "LPT",
+      symbol: SYMBOLS.lpToken,
       name: "LP Token",
       price: ammData.lpBalance,
       change: "Balance",

@@ -1,11 +1,26 @@
 import { useState } from "react";
 import { getAMM, getTokenA, getTokenB } from "../lib/contracts";
-import { parseToken } from "../lib/format";
+import { CONTRACTS, SYMBOLS } from "../config/contracts";
+import { parseToken, formatToken } from "../lib/format";
 import {
   createTradeReceipt,
   saveTradeReceipt,
   uploadJsonToIPFS,
 } from "../lib/ipfs";
+
+function getErrorMessage(error, fallback) {
+  return error?.reason || error?.shortMessage || error?.message || fallback;
+}
+
+async function approveIfNeeded(token, owner, spender, amount, label, setStatus) {
+  const allowance = await token.allowance(owner, spender);
+
+  if (allowance >= amount) return;
+
+  setStatus?.(`Approving ${label}...`);
+  const approveTx = await token.approve(spender, amount);
+  await approveTx.wait();
+}
 
 export default function useTradeActions(signer, reload, setStatus) {
   const [pending, setPending] = useState(false);
@@ -44,7 +59,8 @@ export default function useTradeActions(signer, reload, setStatus) {
 
   async function swapTokenAForTokenB(amountIn, minAmountOut = "0") {
     if (!signer) {
-      throw new Error("Wallet is not connected.");
+      setStatus?.("Please connect wallet first.");
+      return;
     }
 
     try {
@@ -58,14 +74,39 @@ export default function useTradeActions(signer, reload, setStatus) {
       const parsedAmountIn = parseToken(amountIn);
       const parsedMinAmountOut = parseToken(minAmountOut);
 
-      setStatus?.("Approving TokenA...");
-      const approveTx = await tokenA.approve(ammAddress, parsedAmountIn);
-      await approveTx.wait();
+      if (parsedAmountIn <= 0n) {
+        throw new Error("Please enter swap amount greater than 0.");
+      }
 
-      setStatus?.("Swapping TokenA to TokenB...");
-      const swapTx = await amm.swapExactTokenAForTokenB(
+      const balance = await tokenA.balanceOf(trader);
+
+      if (balance < parsedAmountIn) {
+        throw new Error(`Insufficient ${SYMBOLS.tokenA} balance.`);
+      }
+
+      const quotedOut = await amm.getAmountOut(CONTRACTS.tokenA, parsedAmountIn);
+
+      if (quotedOut < parsedMinAmountOut) {
+        throw new Error("Slippage too high. Please refresh quote.");
+      }
+
+      await approveIfNeeded(
+        tokenA,
+        trader,
+        ammAddress,
         parsedAmountIn,
-        parsedMinAmountOut
+        SYMBOLS.tokenA,
+        setStatus
+      );
+
+      setStatus?.(`Swapping ${SYMBOLS.tokenA} to ${SYMBOLS.tokenB}...`);
+
+      const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
+
+      const swapTx = await amm["swapExactTokenAForTokenB(uint256,uint256,uint256)"](
+        parsedAmountIn,
+        parsedMinAmountOut,
+        deadline
       );
 
       const receipt = await swapTx.wait();
@@ -74,20 +115,21 @@ export default function useTradeActions(signer, reload, setStatus) {
         txHash: swapTx.hash,
         trader,
         direction: "A_TO_B",
-        tokenIn: "TKA",
-        tokenOut: "TKB",
+        tokenIn: SYMBOLS.tokenA,
+        tokenOut: SYMBOLS.tokenB,
         amountIn,
         minAmountOut,
+        amountOut: formatToken(quotedOut, 18, 8),
         blockNumber: receipt.blockNumber,
       });
 
       await uploadReceiptSafely(tradeReceipt);
 
-      setStatus?.("Swap TokenA → TokenB successful. Receipt saved.");
+      setStatus?.("Swap successful. Receipt saved.");
       await reload?.();
     } catch (error) {
       console.error(error);
-      setStatus?.(error.shortMessage || error.message || "Swap failed.");
+      setStatus?.(getErrorMessage(error, "Swap failed."));
     } finally {
       setPending(false);
     }
@@ -95,7 +137,8 @@ export default function useTradeActions(signer, reload, setStatus) {
 
   async function swapTokenBForTokenA(amountIn, minAmountOut = "0") {
     if (!signer) {
-      throw new Error("Wallet is not connected.");
+      setStatus?.("Please connect wallet first.");
+      return;
     }
 
     try {
@@ -109,14 +152,39 @@ export default function useTradeActions(signer, reload, setStatus) {
       const parsedAmountIn = parseToken(amountIn);
       const parsedMinAmountOut = parseToken(minAmountOut);
 
-      setStatus?.("Approving TokenB...");
-      const approveTx = await tokenB.approve(ammAddress, parsedAmountIn);
-      await approveTx.wait();
+      if (parsedAmountIn <= 0n) {
+        throw new Error("Please enter swap amount greater than 0.");
+      }
 
-      setStatus?.("Swapping TokenB to TokenA...");
-      const swapTx = await amm.swapExactTokenBForTokenA(
+      const balance = await tokenB.balanceOf(trader);
+
+      if (balance < parsedAmountIn) {
+        throw new Error(`Insufficient ${SYMBOLS.tokenB} balance.`);
+      }
+
+      const quotedOut = await amm.getAmountOut(CONTRACTS.tokenB, parsedAmountIn);
+
+      if (quotedOut < parsedMinAmountOut) {
+        throw new Error("Slippage too high. Please refresh quote.");
+      }
+
+      await approveIfNeeded(
+        tokenB,
+        trader,
+        ammAddress,
         parsedAmountIn,
-        parsedMinAmountOut
+        SYMBOLS.tokenB,
+        setStatus
+      );
+
+      setStatus?.(`Swapping ${SYMBOLS.tokenB} to ${SYMBOLS.tokenA}...`);
+
+      const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
+
+      const swapTx = await amm["swapExactTokenBForTokenA(uint256,uint256,uint256)"](
+        parsedAmountIn,
+        parsedMinAmountOut,
+        deadline
       );
 
       const receipt = await swapTx.wait();
@@ -125,20 +193,21 @@ export default function useTradeActions(signer, reload, setStatus) {
         txHash: swapTx.hash,
         trader,
         direction: "B_TO_A",
-        tokenIn: "TKB",
-        tokenOut: "TKA",
+        tokenIn: SYMBOLS.tokenB,
+        tokenOut: SYMBOLS.tokenA,
         amountIn,
         minAmountOut,
+        amountOut: formatToken(quotedOut, 18, 8),
         blockNumber: receipt.blockNumber,
       });
 
       await uploadReceiptSafely(tradeReceipt);
 
-      setStatus?.("Swap TokenB → TokenA successful. Receipt saved.");
+      setStatus?.("Swap successful. Receipt saved.");
       await reload?.();
     } catch (error) {
       console.error(error);
-      setStatus?.(error.shortMessage || error.message || "Swap failed.");
+      setStatus?.(getErrorMessage(error, "Swap failed."));
     } finally {
       setPending(false);
     }

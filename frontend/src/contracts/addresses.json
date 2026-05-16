@@ -16,12 +16,12 @@
   "symbols": {
     "tokenA": "DTA",
     "tokenB": "DTB",
-    "lpToken": "LP-AMM",
+    "lpToken": "ALP",
     "rewardToken": "DRX"
   },
   "initialPool": {
     "reserveA": "5000000000000000000000",
     "reserveB": "5000000000000000000000"
   },
-  "createdAt": "2026-05-15T12:59:00.972Z"
+  "createdAt": "2026-05-16T09:32:29.416Z"
 }

@@ -1,22 +1,23 @@
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function PortfolioSidebar({ ammData, connected }) {
   const items = [
     {
-      symbol: "TKA",
+      symbol: SYMBOLS.tokenA,
       name: "Token A",
       amount: connected ? ammData.tokenABalance : "—",
       tone: "primary",
     },
     {
-      symbol: "TKB",
+      symbol: SYMBOLS.tokenB,
       name: "Token B",
       amount: connected ? ammData.tokenBBalance : "—",
       tone: "soft",
     },
     {
-      symbol: "LPT",
+      symbol: SYMBOLS.lpToken,
       name: "LP Token",
       amount: connected ? ammData.lpBalance : "—",
       tone: "neutral",
@@ -26,9 +27,14 @@ export default function PortfolioSidebar({ ammData, connected }) {
   return (
     <SurfaceCard className="p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-[16px] font-bold text-[var(--text)]">
-          My Portfolio
-        </h3>
+        <div>
+          <h3 className="text-[16px] font-bold text-[var(--text)]">
+            My Portfolio
+          </h3>
+          <p className="mt-1 text-xs text-[var(--muted)]">
+            Wallet balances
+          </p>
+        </div>
 
         <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
           {connected ? "Wallet" : "Guest"}
@@ -54,11 +60,13 @@ export default function PortfolioSidebar({ ammData, connected }) {
                   <div className="text-sm font-bold text-[var(--text)]">
                     {item.symbol}
                   </div>
-                  <div className="text-xs text-[var(--muted)]">{item.name}</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    {item.name}
+                  </div>
                 </div>
               </div>
 
-              <div className="max-w-[92px] truncate text-right text-sm font-bold text-[var(--text)]">
+              <div className="max-w-[96px] truncate text-right text-sm font-bold text-[var(--text)]">
                 {item.amount}
               </div>
             </div>

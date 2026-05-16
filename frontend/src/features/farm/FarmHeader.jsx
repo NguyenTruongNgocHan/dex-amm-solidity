@@ -1,5 +1,6 @@
 import { Coins, Wallet } from "lucide-react";
 import PageHero from "../../components/common/PageHero";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function FarmHeader({ connected, onConnect, stakingData }) {
   return (
@@ -7,12 +8,21 @@ export default function FarmHeader({ connected, onConnect, stakingData }) {
       badge="Yield Farming"
       icon={<Coins size={14} />}
       title="Stake LP tokens and"
-      highlight="earn DRX rewards"
-      description="Deposit your ALP liquidity provider tokens into the farming contract to earn DRX rewards over time."
+      highlight={`earn ${SYMBOLS.rewardToken} rewards`}
+      description={`Deposit your ${SYMBOLS.lpToken} liquidity provider tokens into the farming contract to earn ${SYMBOLS.rewardToken} rewards over time.`}
       stats={[
-        { label: "Available LP", value: `${stakingData.lpBalance} ALP` },
-        { label: "Staked LP", value: `${stakingData.stakedBalance} ALP` },
-        { label: "Pending DRX", value: `${stakingData.earnedReward} DRX` },
+        {
+          label: `Available ${SYMBOLS.lpToken}`,
+          value: `${stakingData.lpBalance} ${SYMBOLS.lpToken}`,
+        },
+        {
+          label: `Staked ${SYMBOLS.lpToken}`,
+          value: `${stakingData.stakedBalance} ${SYMBOLS.lpToken}`,
+        },
+        {
+          label: `Pending ${SYMBOLS.rewardToken}`,
+          value: `${stakingData.earnedReward} ${SYMBOLS.rewardToken}`,
+        },
       ]}
       action={
         !connected ? (

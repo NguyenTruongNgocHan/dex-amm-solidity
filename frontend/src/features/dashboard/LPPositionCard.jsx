@@ -1,10 +1,16 @@
 import { Coins } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function LPPositionCard({ ammData, connected }) {
+  const withdrawableA =
+    ammData.withdrawableA ?? ammData.withdrawableTokenA ?? ammData.claimableA ?? "0";
+  const withdrawableB =
+    ammData.withdrawableB ?? ammData.withdrawableTokenB ?? ammData.claimableB ?? "0";
+
   return (
-    <SurfaceCard className="p-5">
+    <SurfaceCard className="flex h-full flex-col p-5">
       <div className="flex items-center gap-3">
         <IconBadge tone="soft" className="h-10 w-10">
           <Coins size={18} />
@@ -30,29 +36,30 @@ export default function LPPositionCard({ ammData, connected }) {
 
       <div className="mt-4 grid gap-3">
         <InfoRow
-          label="LP Balance"
-          value={connected ? `${ammData.lpBalance} LPT` : "—"}
+          label={`${SYMBOLS.lpToken} Balance`}
+          value={connected ? `${ammData.lpBalance} ${SYMBOLS.lpToken}` : "—"}
         />
         <InfoRow
           label="Total LP Supply"
-          value={connected ? `${ammData.totalLiquidity} LPT` : "—"}
+          value={connected ? `${ammData.totalLiquidity} ${SYMBOLS.lpToken}` : "—"}
         />
         <InfoRow
-          label="Withdrawable TKA"
-          value={connected ? `${ammData.claimableA} TKA` : "—"}
+          label={`Withdrawable ${SYMBOLS.tokenA}`}
+          value={connected ? `${withdrawableA} ${SYMBOLS.tokenA}` : "—"}
           tone="success"
         />
         <InfoRow
-          label="Withdrawable TKB"
-          value={connected ? `${ammData.claimableB} TKB` : "—"}
+          label={`Withdrawable ${SYMBOLS.tokenB}`}
+          value={connected ? `${withdrawableB} ${SYMBOLS.tokenB}` : "—"}
           tone="success"
         />
       </div>
 
-      <div className="mt-4 rounded-[14px] border border-teal-200 bg-teal-50 px-4 py-3 text-xs leading-5 text-teal-700 dark:border-teal-500/20 dark:bg-teal-500/10 dark:text-teal-300">
-        LP tokens represent your ownership share in the AMM pool. When swaps
-        happen, the 0.3% trading fee stays in the pool, so liquidity providers
-        benefit as pool reserves grow.
+      <div className="mt-auto pt-4">
+        <div className="rounded-[14px] border border-teal-200 bg-teal-50 px-4 py-3 text-xs leading-5 text-teal-700 dark:border-teal-500/20 dark:bg-teal-500/10 dark:text-teal-300">
+          LP tokens represent your ownership share in the AMM pool. Swap fees
+          stay in the pool, so liquidity providers benefit as reserves grow.
+        </div>
       </div>
     </SurfaceCard>
   );

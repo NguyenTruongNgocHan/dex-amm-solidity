@@ -2,10 +2,11 @@ import { Wallet } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import IconBadge from "../../components/common/IconBadge";
 import { shortAddress } from "../../lib/format";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function WalletOverviewCard({ ammData, connected, address }) {
   return (
-    <SurfaceCard className="p-5">
+    <SurfaceCard className="h-full p-5">
       <div className="flex items-center gap-3">
         <IconBadge tone="primary" className="h-10 w-10">
           <Wallet size={18} />
@@ -22,9 +23,18 @@ export default function WalletOverviewCard({ ammData, connected, address }) {
       </div>
 
       <div className="mt-5 grid gap-3">
-        <BalanceRow label="TokenA Balance" value={connected ? ammData.tokenABalance : "—"} />
-        <BalanceRow label="TokenB Balance" value={connected ? ammData.tokenBBalance : "—"} />
-        <BalanceRow label="LP Token Balance" value={connected ? ammData.lpBalance : "—"} />
+        <BalanceRow
+          label={`${SYMBOLS.tokenA} Balance`}
+          value={connected ? ammData.tokenABalance : "—"}
+        />
+        <BalanceRow
+          label={`${SYMBOLS.tokenB} Balance`}
+          value={connected ? ammData.tokenBBalance : "—"}
+        />
+        <BalanceRow
+          label={`${SYMBOLS.lpToken} Balance`}
+          value={connected ? ammData.lpBalance : "—"}
+        />
       </div>
     </SurfaceCard>
   );

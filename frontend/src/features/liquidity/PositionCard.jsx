@@ -1,79 +1,80 @@
-import { Coins } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
-import IconBadge from "../../components/common/IconBadge";
+import { SYMBOLS } from "../../config/contracts";
 
-export default function PositionCard({ ammData, connected }) {
+export default function PositionCard({ ammData, connected, compact = false }) {
+  const empty = !connected;
+
+  const withdrawableA =
+    ammData.withdrawableA ?? ammData.withdrawableTokenA ?? "0";
+
+  const withdrawableB =
+    ammData.withdrawableB ?? ammData.withdrawableTokenB ?? "0";
+
   return (
-    <SurfaceCard className="p-5">
-      <div className="flex items-center gap-3">
-        <IconBadge tone="soft" className="h-11 w-11">
-          <Coins size={20} />
-        </IconBadge>
+    <SurfaceCard className="flex h-full flex-col p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
+          🔗
+        </div>
 
         <div>
-          <h3 className="text-[18px] font-bold text-[var(--text)]">
+          <h3 className="text-lg font-bold text-[var(--text)]">
             Your Position
           </h3>
           <p className="text-sm text-[var(--muted)]">
-            LP ownership and withdrawable tokens
+            Pool ownership and withdrawable tokens
           </p>
         </div>
       </div>
 
-      <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
-        <div className="text-sm text-[var(--muted)]">Your Pool Share</div>
-        <div className="mt-2 text-[32px] font-bold text-teal-600 dark:text-teal-300">
-          {connected ? `${ammData.lpSharePercent}%` : "—"}
-        </div>
+      <div className="rounded-[20px] border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-4">
+        <p className="text-sm text-[var(--muted)]">Your Pool Share</p>
+        <p className="mt-2 text-4xl font-black text-[var(--primary)]">
+          {empty ? "—" : `${ammData.lpSharePercent}%`}
+        </p>
       </div>
 
-      <div className="mt-4 grid gap-3">
-        <MiniRow
-          label="LP Token Balance"
-          value={connected ? `${ammData.lpBalance} LPT` : "—"}
+      <div className={`mt-4 grid gap-2 ${compact ? "text-sm" : ""}`}>
+        <InfoRow
+          label={`${SYMBOLS.lpToken} Balance`}
+          value={empty ? "—" : `${ammData.lpBalance} ${SYMBOLS.lpToken}`}
         />
-        <MiniRow
+        <InfoRow
           label="Total LP Supply"
-          value={connected ? `${ammData.totalLiquidity} LPT` : "—"}
+          value={empty ? "—" : `${ammData.totalLiquidity} ${SYMBOLS.lpToken}`}
         />
-        <MiniRow
-          label="Withdrawable TKA"
-          value={connected ? `${ammData.claimableA} TKA` : "—"}
-          tone="success"
+        <InfoRow
+          label={`Withdrawable ${SYMBOLS.tokenA}`}
+          value={empty ? "—" : `${withdrawableA} ${SYMBOLS.tokenA}`}
+          highlight
         />
-        <MiniRow
-          label="Withdrawable TKB"
-          value={connected ? `${ammData.claimableB} TKB` : "—"}
-          tone="success"
-        />
-        <MiniRow
-          label="Wallet TKA"
-          value={connected ? `${ammData.tokenABalance} TKA` : "—"}
-        />
-        <MiniRow
-          label="Wallet TKB"
-          value={connected ? `${ammData.tokenBBalance} TKB` : "—"}
+        <InfoRow
+          label={`Withdrawable ${SYMBOLS.tokenB}`}
+          value={empty ? "—" : `${withdrawableB} ${SYMBOLS.tokenB}`}
+          highlight
         />
       </div>
 
-      <div className="mt-4 rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
-        When you remove liquidity, the AMM burns your LP tokens and returns
-        TokenA/TokenB based on your current pool ownership percentage.
+      <div className="mt-auto pt-4">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 text-xs leading-5 text-[var(--muted)]">
+          Your {SYMBOLS.lpToken} represents your share of the pool. Removing
+          liquidity burns LP tokens and returns {SYMBOLS.tokenA}/
+          {SYMBOLS.tokenB} based on the current reserve ratio.
+        </div>
       </div>
     </SurfaceCard>
   );
 }
 
-function MiniRow({ label, value, tone = "neutral" }) {
-  const toneClass = {
-    neutral: "text-[var(--text)]",
-    success: "text-emerald-500",
-  }[tone];
-
+function InfoRow({ label, value, highlight = false }) {
   return (
-    <div className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-      <span className="text-sm text-[var(--muted)]">{label}</span>
-      <span className={`max-w-[150px] truncate text-sm font-bold ${toneClass}`}>
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
+      <span className="text-[var(--muted)]">{label}</span>
+      <span
+        className={`max-w-[170px] truncate text-right font-bold ${
+          highlight ? "text-[var(--primary)]" : "text-[var(--text)]"
+        }`}
+      >
         {value}
       </span>
     </div>

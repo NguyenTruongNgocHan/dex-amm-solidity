@@ -35,7 +35,7 @@ export default function useStakingData(walletAddress, provider, refreshKey = 0) 
         const amm = getAMM(provider);
         const lpTokenAddress = await amm.lpToken();
 
-        const lpToken = getLPToken(lpTokenAddress, provider);
+        const lpToken = getLPToken(provider, lpTokenAddress);
         const rewardToken = getRewardToken(provider);
         const stakingRewards = getStakingRewards(provider);
 

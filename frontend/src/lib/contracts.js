@@ -13,63 +13,37 @@ function getAbi(artifactOrAbi) {
 
 function assertAddress(address, label) {
   if (!address || !ethers.isAddress(address)) {
-    throw new Error(`Invalid ${label} contract address. Please deploy and sync frontend.`);
+    throw new Error(`Invalid ${label} address. Please redeploy and sync frontend.`);
   }
 }
 
 export function getAMM(signerOrProvider) {
   assertAddress(CONTRACTS.amm, "AMM");
-
-  return new ethers.Contract(
-    CONTRACTS.amm,
-    getAbi(SimpleAMMArtifact),
-    signerOrProvider
-  );
+  return new ethers.Contract(CONTRACTS.amm, getAbi(SimpleAMMArtifact), signerOrProvider);
 }
 
 export function getTokenA(signerOrProvider) {
   assertAddress(CONTRACTS.tokenA, "TokenA");
-
-  return new ethers.Contract(
-    CONTRACTS.tokenA,
-    getAbi(MockERC20Artifact),
-    signerOrProvider
-  );
+  return new ethers.Contract(CONTRACTS.tokenA, getAbi(MockERC20Artifact), signerOrProvider);
 }
 
 export function getTokenB(signerOrProvider) {
   assertAddress(CONTRACTS.tokenB, "TokenB");
-
-  return new ethers.Contract(
-    CONTRACTS.tokenB,
-    getAbi(MockERC20Artifact),
-    signerOrProvider
-  );
+  return new ethers.Contract(CONTRACTS.tokenB, getAbi(MockERC20Artifact), signerOrProvider);
 }
 
 export function getLPToken(signerOrProvider, overrideAddress = CONTRACTS.lpToken) {
   assertAddress(overrideAddress, "LPToken");
-
-  return new ethers.Contract(
-    overrideAddress,
-    getAbi(LPTokenArtifact),
-    signerOrProvider
-  );
+  return new ethers.Contract(overrideAddress, getAbi(LPTokenArtifact), signerOrProvider);
 }
 
 export function getRewardToken(signerOrProvider) {
   assertAddress(CONTRACTS.rewardToken, "RewardToken");
-
-  return new ethers.Contract(
-    CONTRACTS.rewardToken,
-    getAbi(DEXRewardTokenArtifact),
-    signerOrProvider
-  );
+  return new ethers.Contract(CONTRACTS.rewardToken, getAbi(DEXRewardTokenArtifact), signerOrProvider);
 }
 
 export function getStakingRewards(signerOrProvider) {
   assertAddress(CONTRACTS.stakingRewards, "StakingRewards");
-
   return new ethers.Contract(
     CONTRACTS.stakingRewards,
     getAbi(StakingRewardsArtifact),

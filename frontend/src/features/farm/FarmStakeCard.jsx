@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { SYMBOLS } from "../../config/contracts";
+
+function cleanNumber(value) {
+  return String(value || "0").replaceAll(",", "");
+}
 
 export default function FarmStakeCard({
   connected,
@@ -20,27 +25,30 @@ export default function FarmStakeCard({
   }
 
   function useMaxLP() {
-    setAmount(stakingData.lpBalance || "0");
+    setAmount(cleanNumber(stakingData.lpBalance));
   }
 
   function useMaxStaked() {
-    setAmount(stakingData.stakedBalance || "0");
+    setAmount(cleanNumber(stakingData.stakedBalance));
   }
 
   return (
-    <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+    <section className="flex h-full flex-col rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
       <div>
         <h2 className="text-lg font-black text-[var(--text)]">
-          Manage LP Stake
+          Manage {SYMBOLS.lpToken} Stake
         </h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Stake LP to earn DRX, or withdraw your staked LP anytime.
+          Stake {SYMBOLS.lpToken} to earn {SYMBOLS.rewardToken}, or withdraw
+          your staked position anytime.
         </p>
       </div>
 
       <div className="mt-5 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
         <div className="mb-2 flex items-center justify-between text-xs">
-          <span className="font-semibold text-[var(--muted)]">LP Amount</span>
+          <span className="font-semibold text-[var(--muted)]">
+            {SYMBOLS.lpToken} Amount
+          </span>
 
           <div className="flex gap-2">
             <button
@@ -72,36 +80,46 @@ export default function FarmStakeCard({
           />
 
           <span className="rounded-xl bg-[var(--primary-soft)] px-3 py-2 text-sm font-black text-[var(--primary)]">
-            ALP
+            {SYMBOLS.lpToken}
           </span>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-[var(--muted)]">
           <div>
-            Wallet LP:{" "}
+            Wallet:{" "}
             <span className="font-bold text-[var(--text)]">
-              {stakingData.lpBalance}
+              {stakingData.lpBalance} {SYMBOLS.lpToken}
             </span>
           </div>
 
           <div className="text-right">
-            Staked LP:{" "}
+            Staked:{" "}
             <span className="font-bold text-[var(--text)]">
-              {stakingData.stakedBalance}
+              {stakingData.stakedBalance} {SYMBOLS.lpToken}
             </span>
           </div>
         </div>
       </div>
 
+      <div className="mt-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
+        <div className="text-xs font-black uppercase tracking-wide text-cyan-300">
+          Farm logic
+        </div>
+        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+          Rewards are calculated from your staked {SYMBOLS.lpToken} balance and
+          accumulated over time.
+        </p>
+      </div>
+
       {!connected ? (
         <button
           onClick={onConnect}
-          className="mt-5 w-full rounded-2xl bg-[var(--primary)] px-5 py-4 text-sm font-black text-white transition hover:opacity-90"
+          className="mt-auto w-full rounded-2xl bg-[var(--primary)] px-5 py-4 text-sm font-black text-white transition hover:opacity-90"
         >
           Connect Wallet
         </button>
       ) : (
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-auto grid grid-cols-2 gap-3 pt-5">
           <button
             onClick={handleStake}
             disabled={actions.pending}

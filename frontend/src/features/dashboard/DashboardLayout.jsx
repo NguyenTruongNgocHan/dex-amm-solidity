@@ -42,41 +42,44 @@ export default function DashboardLayout({ wallet, amm, activity }) {
 
       <StatusBanner message={showStatus} className="mt-5" />
 
-      <div className="mt-6 grid gap-5 xl:grid-cols-12">
-        <section className="space-y-5 xl:col-span-8">
-          <div className="grid gap-5 md:grid-cols-2">
-            <PoolAnalyticsCard ammData={amm.data} loading={amm.loading} />
-            <PriceOverviewCard ammData={amm.data} />
-          </div>
+      <section className="mt-6 grid gap-5 xl:grid-cols-12 xl:items-stretch">
+        <div className="xl:col-span-4">
+          <PoolAnalyticsCard ammData={amm.data} loading={amm.loading} />
+        </div>
 
-          <ActivityAnalyticsCard
-            events={activity.allEvents || activity.events}
+        <div className="xl:col-span-4">
+          <PriceOverviewCard ammData={amm.data} />
+        </div>
+
+        <div className="xl:col-span-4">
+          <WalletOverviewCard
+            ammData={amm.data}
+            connected={connected}
+            address={wallet.address}
           />
+        </div>
 
+        <div className="xl:col-span-8">
+          <ActivityAnalyticsCard events={activity.allEvents || activity.events} />
+        </div>
+
+        <div className="xl:col-span-4 xl:row-span-2">
+          <LPPositionCard ammData={amm.data} connected={connected} />
+        </div>
+
+        <div className="xl:col-span-8">
           <SystemActivityCard
             events={activity.events}
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
             title="Recent System Activity"
-            description="A unified timeline for swaps, liquidity operations, LP staking, and DRX rewards."
+            description="A unified timeline for swaps, liquidity operations, LP staking, and rewards."
             scroll
             maxHeight="360px"
           />
-        </section>
-
-        <aside className="space-y-5 xl:col-span-4">
-          <div className="space-y-5 xl:sticky xl:top-28">
-            <WalletOverviewCard
-              ammData={amm.data}
-              connected={connected}
-              address={wallet.address}
-            />
-
-            <LPPositionCard ammData={amm.data} connected={connected} />
-          </div>
-        </aside>
-      </div>
+        </div>
+      </section>
 
       <section className="mt-6">
         <IPFSPanelCard walletAddress={wallet.address} />

@@ -12,7 +12,7 @@ import FarmPositionCard from "../features/farm/FarmPositionCard";
 import FarmStakeCard from "../features/farm/FarmStakeCard";
 import FarmRewardCard from "../features/farm/FarmRewardCard";
 import FarmExplainCard from "../features/farm/FarmExplainCard";
-import SystemActivityCard from "../features/activity/SystemActivityCard";
+import FarmPageLayout from "../features/farm/FarmPageLayout";
 import StatusBanner from "../components/common/StatusBanner";
 
 export default function FarmPage({
@@ -63,42 +63,32 @@ export default function FarmPage({
 
         <FarmStatsGrid stakingData={stakingData} />
 
-        <div className="mt-6 grid gap-5 xl:grid-cols-12">
-          <section className="space-y-5 xl:col-span-4">
-            <FarmPositionCard stakingData={stakingData} />
-            <FarmExplainCard />
-          </section>
-
-          <section className="space-y-5 xl:col-span-4">
+        <FarmPageLayout
+          position={
+            <FarmPositionCard
+              stakingData={stakingData}
+              connected={connected}
+            />
+          }
+          stake={
             <FarmStakeCard
               connected={connected}
               onConnect={wallet.connect}
               stakingData={stakingData}
               actions={actions}
             />
-
+          }
+          reward={
             <FarmRewardCard
               connected={connected}
               onConnect={wallet.connect}
               stakingData={stakingData}
               actions={actions}
             />
-          </section>
-
-          <aside className="xl:col-span-4">
-            <div className="xl:sticky xl:top-28">
-              <SystemActivityCard
-                events={activity.events}
-                allEvents={activity.allEvents}
-                loading={activity.loading}
-                onRefresh={activity.reloadEvents}
-                title="Recent System Activity"
-                description="Unified history across swap, liquidity, farming, and reward actions."
-                scroll
-              />
-            </div>
-          </aside>
-        </div>
+          }
+          explain={<FarmExplainCard />}
+          activity={activity}
+        />
       </main>
     </AppShell>
   );

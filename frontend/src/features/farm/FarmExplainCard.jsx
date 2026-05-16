@@ -1,4 +1,5 @@
 import { Info, Repeat, Sprout, WalletCards } from "lucide-react";
+import { SYMBOLS } from "../../config/contracts";
 
 function Step({ icon, title, description }) {
   return (
@@ -19,7 +20,7 @@ function Step({ icon, title, description }) {
 
 export default function FarmExplainCard() {
   return (
-    <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
+    <section className="h-full rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
       <div className="flex items-center gap-2">
         <Info size={18} className="text-[var(--primary)]" />
         <h2 className="text-lg font-black text-[var(--text)]">
@@ -31,19 +32,19 @@ export default function FarmExplainCard() {
         <Step
           icon={<Repeat size={18} />}
           title="1. Add liquidity"
-          description="Deposit TKA and TKB into the AMM pool to receive ALP liquidity provider tokens."
+          description={`Deposit ${SYMBOLS.tokenA} and ${SYMBOLS.tokenB} into the AMM pool to receive ${SYMBOLS.lpToken}.`}
         />
 
         <Step
           icon={<Sprout size={18} />}
-          title="2. Stake ALP"
-          description="Deposit your ALP into the farm contract. Your staked balance is used to calculate rewards."
+          title={`2. Stake ${SYMBOLS.lpToken}`}
+          description={`Deposit your ${SYMBOLS.lpToken} into the farm contract. Your staked balance is used to calculate rewards.`}
         />
 
         <Step
           icon={<WalletCards size={18} />}
-          title="3. Earn DRX"
-          description="Claim DRX rewards over time, then withdraw your ALP whenever you want."
+          title={`3. Earn ${SYMBOLS.rewardToken}`}
+          description={`Claim ${SYMBOLS.rewardToken} rewards over time, then withdraw your ${SYMBOLS.lpToken} whenever you want.`}
         />
       </div>
     </section>

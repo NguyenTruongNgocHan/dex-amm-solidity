@@ -1,5 +1,6 @@
 import { Activity, Coins, Droplets, Route } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
+import { SYMBOLS } from "../../config/contracts";
 
 export default function PoolInsightStrip({ ammData, activity }) {
   const latestEvent = activity?.events?.[0];
@@ -9,17 +10,17 @@ export default function PoolInsightStrip({ ammData, activity }) {
       icon: <Droplets size={16} />,
       label: "Pool Depth",
       value: `${ammData.reserveA} / ${ammData.reserveB}`,
-      hint: "TKA / TKB",
+      hint: `${SYMBOLS.tokenA} / ${SYMBOLS.tokenB}`,
     },
     {
       icon: <Route size={16} />,
       label: "Reserve Ratio",
-      value: `1 TKA = ${ammData.priceAinB} TKB`,
+      value: `1 ${SYMBOLS.tokenA} = ${ammData.priceAinB} ${SYMBOLS.tokenB}`,
       hint: "Spot pool price",
     },
     {
       icon: <Coins size={16} />,
-      label: "Your LP",
+      label: `Your ${SYMBOLS.lpToken}`,
       value: ammData.lpBalance,
       hint: "LP token balance",
     },

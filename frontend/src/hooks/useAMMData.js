@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAMM, getLPToken, getTokenA, getTokenB } from "../lib/contracts";
 import { formatToken } from "../lib/format";
+import { SYMBOLS } from "../config/contracts";
 
 const emptyData = {
   reserveA: "0",
@@ -151,11 +152,11 @@ export default function useAMMData(provider, address) {
 
         priceAinB,
         priceBinA,
-        tvlLabel: `${formatToken(reserveARaw, 18, 2)} TKA / ${formatToken(
+        tvlLabel: `${formatToken(reserveARaw, 18, 2)} ${SYMBOLS.tokenA} / ${formatToken(
           reserveBRaw,
           18,
           2
-        )} TKB`,
+        )} ${SYMBOLS.tokenB}`,
         hasLiquidity,
       });
     } catch (err) {

@@ -59,15 +59,15 @@ contract SimpleAMM is ReentrancyGuard {
     }
 
     function addLiquidity(
-        uint256 amountA,
-        uint256 amountB
+        uint256 amountADesired,
+        uint256 amountBDesired
     ) external nonReentrant returns (uint256 liquidityMinted) {
-        return _addLiquidity(amountA, amountB, 0, block.timestamp);
+        return _addLiquidity(amountADesired, amountBDesired, 0);
     }
 
     function addLiquidity(
-        uint256 amountA,
-        uint256 amountB,
+        uint256 amountADesired,
+        uint256 amountBDesired,
         uint256 minLiquidity,
         uint256 deadline
     )
@@ -76,13 +76,13 @@ contract SimpleAMM is ReentrancyGuard {
         ensureDeadline(deadline)
         returns (uint256 liquidityMinted)
     {
-        return _addLiquidity(amountA, amountB, minLiquidity, deadline);
+        return _addLiquidity(amountADesired, amountBDesired, minLiquidity);
     }
 
     function removeLiquidity(
         uint256 liquidityAmount
     ) external nonReentrant returns (uint256 amountA, uint256 amountB) {
-        return _removeLiquidity(liquidityAmount, 0, 0, block.timestamp);
+        return _removeLiquidity(liquidityAmount, 0, 0);
     }
 
     function removeLiquidity(
@@ -96,14 +96,14 @@ contract SimpleAMM is ReentrancyGuard {
         ensureDeadline(deadline)
         returns (uint256 amountA, uint256 amountB)
     {
-        return _removeLiquidity(liquidityAmount, minAmountA, minAmountB, deadline);
+        return _removeLiquidity(liquidityAmount, minAmountA, minAmountB);
     }
 
     function swapExactTokenAForTokenB(
         uint256 amountAIn,
         uint256 minAmountBOut
     ) external nonReentrant returns (uint256 amountBOut) {
-        return _swap(address(tokenA), amountAIn, minAmountBOut, block.timestamp);
+        return _swap(address(tokenA), amountAIn, minAmountBOut);
     }
 
     function swapExactTokenAForTokenB(
@@ -116,14 +116,14 @@ contract SimpleAMM is ReentrancyGuard {
         ensureDeadline(deadline)
         returns (uint256 amountBOut)
     {
-        return _swap(address(tokenA), amountAIn, minAmountBOut, deadline);
+        return _swap(address(tokenA), amountAIn, minAmountBOut);
     }
 
     function swapExactTokenBForTokenA(
         uint256 amountBIn,
         uint256 minAmountAOut
     ) external nonReentrant returns (uint256 amountAOut) {
-        return _swap(address(tokenB), amountBIn, minAmountAOut, block.timestamp);
+        return _swap(address(tokenB), amountBIn, minAmountAOut);
     }
 
     function swapExactTokenBForTokenA(
@@ -136,7 +136,7 @@ contract SimpleAMM is ReentrancyGuard {
         ensureDeadline(deadline)
         returns (uint256 amountAOut)
     {
-        return _swap(address(tokenB), amountBIn, minAmountAOut, deadline);
+        return _swap(address(tokenB), amountBIn, minAmountAOut);
     }
 
     function getReserves() external view returns (uint256, uint256) {
@@ -176,60 +176,86 @@ contract SimpleAMM is ReentrancyGuard {
     }
 
     function quoteAddLiquidity(
-        uint256 amountA,
-        uint256 amountB
-    ) external view returns (uint256 liquidityMinted) {
-        require(amountA > 0 && amountB > 0, "Invalid amounts");
+        uint256 amountADesired,
+        uint256 amountBDesired
+    ) public view returns (uint256 liquidityMinted) {
+        (, , liquidityMinted) = quoteAddLiquidityAmounts(
+            amountADesired,
+            amountBDesired
+        );
+    }
+
+    function quoteAddLiquidityAmounts(
+        uint256 amountADesired,
+        uint256 amountBDesired
+    )
+        public
+        view
+        returns (
+            uint256 amountAUsed,
+            uint256 amountBUsed,
+            uint256 liquidityMinted
+        )
+    {
+        require(amountADesired > 0 && amountBDesired > 0, "Invalid amounts");
 
         if (totalLiquidity == 0) {
-            return _sqrt(amountA * amountB);
+            amountAUsed = amountADesired;
+            amountBUsed = amountBDesired;
+            liquidityMinted = _sqrt(amountAUsed * amountBUsed);
+            return (amountAUsed, amountBUsed, liquidityMinted);
         }
 
-        uint256 liquidityA = (amountA * totalLiquidity) / reserveA;
-        uint256 liquidityB = (amountB * totalLiquidity) / reserveB;
+        uint256 optimalB = (amountADesired * reserveB) / reserveA;
 
-        return _min(liquidityA, liquidityB);
+        if (optimalB <= amountBDesired) {
+            amountAUsed = amountADesired;
+            amountBUsed = optimalB;
+        } else {
+            uint256 optimalA = (amountBDesired * reserveA) / reserveB;
+            amountAUsed = optimalA;
+            amountBUsed = amountBDesired;
+        }
+
+        uint256 liquidityA = (amountAUsed * totalLiquidity) / reserveA;
+        uint256 liquidityB = (amountBUsed * totalLiquidity) / reserveB;
+
+        liquidityMinted = _min(liquidityA, liquidityB);
     }
 
     function _addLiquidity(
-        uint256 amountA,
-        uint256 amountB,
-        uint256 minLiquidity,
-        uint256
+        uint256 amountADesired,
+        uint256 amountBDesired,
+        uint256 minLiquidity
     ) private returns (uint256 liquidityMinted) {
-        require(amountA > 0 && amountB > 0, "Invalid amounts");
+        (
+            uint256 amountAUsed,
+            uint256 amountBUsed,
+            uint256 quotedLiquidity
+        ) = quoteAddLiquidityAmounts(amountADesired, amountBDesired);
 
-        if (totalLiquidity == 0) {
-            liquidityMinted = _sqrt(amountA * amountB);
-        } else {
-            require(amountA * reserveB == amountB * reserveA, "Invalid pool ratio");
+        require(amountAUsed > 0 && amountBUsed > 0, "Zero liquidity amount");
+        require(quotedLiquidity > 0, "Zero liquidity minted");
+        require(quotedLiquidity >= minLiquidity, "Insufficient liquidity minted");
 
-            uint256 liquidityA = (amountA * totalLiquidity) / reserveA;
-            uint256 liquidityB = (amountB * totalLiquidity) / reserveB;
+        tokenA.safeTransferFrom(msg.sender, address(this), amountAUsed);
+        tokenB.safeTransferFrom(msg.sender, address(this), amountBUsed);
 
-            liquidityMinted = _min(liquidityA, liquidityB);
-        }
+        reserveA += amountAUsed;
+        reserveB += amountBUsed;
+        totalLiquidity += quotedLiquidity;
 
-        require(liquidityMinted > 0, "Zero liquidity minted");
-        require(liquidityMinted >= minLiquidity, "Insufficient liquidity minted");
+        lpToken.mint(msg.sender, quotedLiquidity);
 
-        tokenA.safeTransferFrom(msg.sender, address(this), amountA);
-        tokenB.safeTransferFrom(msg.sender, address(this), amountB);
+        emit LiquidityAdded(msg.sender, amountAUsed, amountBUsed, quotedLiquidity);
 
-        totalLiquidity += liquidityMinted;
-        reserveA += amountA;
-        reserveB += amountB;
-
-        lpToken.mint(msg.sender, liquidityMinted);
-
-        emit LiquidityAdded(msg.sender, amountA, amountB, liquidityMinted);
+        return quotedLiquidity;
     }
 
     function _removeLiquidity(
         uint256 liquidityAmount,
         uint256 minAmountA,
-        uint256 minAmountB,
-        uint256
+        uint256 minAmountB
     ) private returns (uint256 amountA, uint256 amountB) {
         require(liquidityAmount > 0, "Invalid liquidity");
         require(totalLiquidity > 0, "Empty pool");
@@ -256,8 +282,7 @@ contract SimpleAMM is ReentrancyGuard {
     function _swap(
         address tokenIn,
         uint256 amountIn,
-        uint256 minAmountOut,
-        uint256
+        uint256 minAmountOut
     ) private returns (uint256 amountOut) {
         require(amountIn > 0, "Invalid input");
         require(reserveA > 0 && reserveB > 0, "Empty pool");
@@ -277,7 +302,13 @@ contract SimpleAMM is ReentrancyGuard {
 
             tokenB.safeTransfer(msg.sender, amountOut);
 
-            emit Swapped(msg.sender, address(tokenA), amountIn, address(tokenB), amountOut);
+            emit Swapped(
+                msg.sender,
+                address(tokenA),
+                amountIn,
+                address(tokenB),
+                amountOut
+            );
         } else if (tokenIn == address(tokenB)) {
             require(amountOut < reserveA, "Not enough liquidity");
 
@@ -288,7 +319,13 @@ contract SimpleAMM is ReentrancyGuard {
 
             tokenA.safeTransfer(msg.sender, amountOut);
 
-            emit Swapped(msg.sender, address(tokenB), amountIn, address(tokenA), amountOut);
+            emit Swapped(
+                msg.sender,
+                address(tokenB),
+                amountIn,
+                address(tokenA),
+                amountOut
+            );
         } else {
             revert("Unsupported token");
         }

@@ -98,7 +98,7 @@ describe("SimpleAMM with LPToken", function () {
     expect(quotedLiquidity).to.equal(toWei("100"));
   });
 
-  it("should reject invalid liquidity ratio after pool is initialized", async function () {
+  it("should accept unbalanced desired liquidity and use the optimal pool ratio", async function () {
     await approveAndAddInitialLiquidity();
 
     await tokenA.connect(alice).approve(await amm.getAddress(), toWei("100"));
@@ -106,7 +106,11 @@ describe("SimpleAMM with LPToken", function () {
 
     await expect(
       amm.connect(alice).addLiquidity(toWei("100"), toWei("200"))
-    ).to.be.revertedWith("Invalid pool ratio");
+    ).to.emit(amm, "LiquidityAdded");
+
+    expect(await amm.reserveA()).to.equal(toWei("1100"));
+    expect(await amm.reserveB()).to.equal(toWei("1100"));
+    expect(await lpToken.balanceOf(alice.address)).to.equal(toWei("100"));
   });
 
   it("should add liquidity with deadline and minimum LP protection", async function () {
