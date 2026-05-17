@@ -215,17 +215,6 @@ Add screenshots under docs/screenshots and keep the names below:
 - docs/screenshots/07-farm-claim.png
 - docs/screenshots/08-ipfs-center.png
 
-Markdown placeholders:
-
-![Home](docs/screenshots/01-home.png)
-![Dashboard](docs/screenshots/02-dashboard.png)
-![Trade](docs/screenshots/03-trade-swap.png)
-![Liquidity Add](docs/screenshots/04-liquidity-add.png)
-![Liquidity Remove](docs/screenshots/05-liquidity-remove.png)
-![Farm Stake](docs/screenshots/06-farm-stake.png)
-![Farm Claim](docs/screenshots/07-farm-claim.png)
-![IPFS Evidence Center](docs/screenshots/08-ipfs-center.png)
-
 ## License
 
 MIT
