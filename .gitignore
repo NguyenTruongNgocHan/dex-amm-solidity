@@ -3,7 +3,10 @@ package-lock.json
 artifacts
 cache
 types
-docs
+docs/IPFS_key.txt
+docs/DEMO_SCRIPT.md
+docs/RUBRIC_CHECKLIST.md
+docs/TESTING.md
 scripts/interact.js
 deployments
 frontend/src/contracts/address.json
