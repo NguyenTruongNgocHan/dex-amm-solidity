@@ -25,6 +25,19 @@ describe("StakingRewards", function () {
     await ethers.provider.send("evm_mine", []);
   }
 
+  async function stakeAllAliceLP() {
+    const lpBalance = await lpToken.balanceOf(alice.address);
+
+    await lpToken.connect(alice).approve(
+      await stakingRewards.getAddress(),
+      lpBalance
+    );
+
+    await stakingRewards.connect(alice).stake(lpBalance);
+
+    return lpBalance;
+  }
+
   beforeEach(async function () {
     ({ ethers } = await hre.network.create());
 
@@ -33,18 +46,18 @@ describe("StakingRewards", function () {
     tokenA = await ethers.deployContract("MockERC20", [
       "Token A",
       "TKA",
-      toWei("1000000")
+      toWei("1000000"),
     ]);
 
     tokenB = await ethers.deployContract("MockERC20", [
       "Token B",
       "TKB",
-      toWei("1000000")
+      toWei("1000000"),
     ]);
 
     amm = await ethers.deployContract("SimpleAMM", [
       await tokenA.getAddress(),
-      await tokenB.getAddress()
+      await tokenB.getAddress(),
     ]);
 
     const lpTokenAddress = await amm.lpToken();
@@ -55,7 +68,7 @@ describe("StakingRewards", function () {
     stakingRewards = await ethers.deployContract("StakingRewards", [
       lpTokenAddress,
       await rewardToken.getAddress(),
-      REWARD_DURATION
+      REWARD_DURATION,
     ]);
 
     await tokenA.transfer(alice.address, toWei("10000"));
@@ -71,15 +84,22 @@ describe("StakingRewards", function () {
   });
 
   it("should deploy with correct staking token and reward token", async function () {
-    expect(await stakingRewards.stakingToken()).to.equal(await lpToken.getAddress());
-    expect(await stakingRewards.rewardToken()).to.equal(await rewardToken.getAddress());
+    expect(await stakingRewards.stakingToken()).to.equal(
+      await lpToken.getAddress()
+    );
+    expect(await stakingRewards.rewardToken()).to.equal(
+      await rewardToken.getAddress()
+    );
     expect(await stakingRewards.duration()).to.equal(REWARD_DURATION);
   });
 
   it("should allow user to stake LP tokens", async function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
 
-    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
+    await lpToken.connect(alice).approve(
+      await stakingRewards.getAddress(),
+      lpBalance
+    );
 
     await expect(stakingRewards.connect(alice).stake(lpBalance))
       .to.emit(stakingRewards, "Staked")
@@ -91,10 +111,7 @@ describe("StakingRewards", function () {
   });
 
   it("should calculate earned rewards over time", async function () {
-    const lpBalance = await lpToken.balanceOf(alice.address);
-
-    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
-    await stakingRewards.connect(alice).stake(lpBalance);
+    await stakeAllAliceLP();
 
     await increaseTime(3600);
 
@@ -102,15 +119,14 @@ describe("StakingRewards", function () {
   });
 
   it("should allow user to claim DRX rewards", async function () {
-    const lpBalance = await lpToken.balanceOf(alice.address);
-
-    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
-    await stakingRewards.connect(alice).stake(lpBalance);
+    await stakeAllAliceLP();
 
     await increaseTime(3600);
 
-    await expect(stakingRewards.connect(alice).claimReward())
-      .to.emit(stakingRewards, "RewardPaid");
+    await expect(stakingRewards.connect(alice).claimReward()).to.emit(
+      stakingRewards,
+      "RewardPaid"
+    );
 
     expect(await rewardToken.balanceOf(alice.address)).to.be.greaterThan(0n);
     expect(await stakingRewards.earned(alice.address)).to.equal(0n);
@@ -120,7 +136,10 @@ describe("StakingRewards", function () {
     const lpBalance = await lpToken.balanceOf(alice.address);
     const stakeAmount = lpBalance / 2n;
 
-    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), stakeAmount);
+    await lpToken.connect(alice).approve(
+      await stakingRewards.getAddress(),
+      stakeAmount
+    );
 
     await stakingRewards.connect(alice).stake(stakeAmount);
 
@@ -133,24 +152,48 @@ describe("StakingRewards", function () {
     expect(await lpToken.balanceOf(alice.address)).to.equal(lpBalance);
   });
 
-  it("should allow user to exit farm", async function () {
-    const lpBalance = await lpToken.balanceOf(alice.address);
-
-    await lpToken.connect(alice).approve(await stakingRewards.getAddress(), lpBalance);
-    await stakingRewards.connect(alice).stake(lpBalance);
+  it("should allow user to exit farm with rewards", async function () {
+    const lpBalance = await stakeAllAliceLP();
 
     await increaseTime(3600);
 
-    await stakingRewards.connect(alice).exit();
+    await expect(stakingRewards.connect(alice).exit()).to.emit(
+      stakingRewards,
+      "RewardPaid"
+    );
 
     expect(await stakingRewards.balanceOf(alice.address)).to.equal(0n);
     expect(await lpToken.balanceOf(alice.address)).to.equal(lpBalance);
     expect(await rewardToken.balanceOf(alice.address)).to.be.greaterThan(0n);
   });
 
+  it("should allow user to exit farm immediately without reverting", async function () {
+    const lpBalance = await stakeAllAliceLP();
+
+    await expect(stakingRewards.connect(alice).exit())
+      .to.emit(stakingRewards, "Withdrawn")
+      .withArgs(alice.address, lpBalance);
+
+    expect(await stakingRewards.balanceOf(alice.address)).to.equal(0n);
+    expect(await stakingRewards.totalSupply()).to.equal(0n);
+    expect(await lpToken.balanceOf(alice.address)).to.equal(lpBalance);
+  });
+
+  it("should revert when exiting without staked balance", async function () {
+    await expect(stakingRewards.connect(alice).exit()).to.be.revertedWith(
+      "No staked balance"
+    );
+  });
+
   it("should revert when staking zero amount", async function () {
     await expect(stakingRewards.connect(alice).stake(0)).to.be.revertedWith(
       "Cannot stake 0"
+    );
+  });
+
+  it("should revert when withdrawing zero amount", async function () {
+    await expect(stakingRewards.connect(alice).withdraw(0)).to.be.revertedWith(
+      "Cannot withdraw 0"
     );
   });
 
@@ -169,7 +212,11 @@ describe("StakingRewards", function () {
   it("should only allow owner to notify reward amount", async function () {
     await expect(
       stakingRewards.connect(bob).notifyRewardAmount(toWei("1000"))
-    ).to.be.revertedWithCustomError(stakingRewards, "OwnableUnauthorizedAccount")
+    )
+      .to.be.revertedWithCustomError(
+        stakingRewards,
+        "OwnableUnauthorizedAccount"
+      )
       .withArgs(bob.address);
   });
 });

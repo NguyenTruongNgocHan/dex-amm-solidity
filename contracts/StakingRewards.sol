@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract StakingRewards is Ownable {
     using SafeERC20 for IERC20;
@@ -12,21 +12,21 @@ contract StakingRewards is Ownable {
     IERC20 public immutable rewardToken;
 
     uint256 public duration;
-    uint256 public periodFinish;
+    uint256 public finishAt;
+    uint256 public updatedAt;
     uint256 public rewardRate;
-    uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
 
-    uint256 private _totalSupply;
+    uint256 public totalSupply;
 
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) public balanceOf;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
-    event RewardAdded(uint256 reward, uint256 duration);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
+    event RewardAdded(uint256 reward);
 
     constructor(
         address _stakingToken,
@@ -44,7 +44,7 @@ contract StakingRewards is Ownable {
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
+        updatedAt = lastTimeRewardApplicable();
 
         if (account != address(0)) {
             rewards[account] = earned(account);
@@ -54,52 +54,33 @@ contract StakingRewards is Ownable {
         _;
     }
 
-    function totalSupply() external view returns (uint256) {
-        return _totalSupply;
-    }
-
-    function balanceOf(address account) external view returns (uint256) {
-        return _balances[account];
-    }
-
     function lastTimeRewardApplicable() public view returns (uint256) {
-        if (block.timestamp < periodFinish) {
-            return block.timestamp;
-        }
-
-        return periodFinish;
+        return block.timestamp < finishAt ? block.timestamp : finishAt;
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (_totalSupply == 0) {
+        if (totalSupply == 0) {
             return rewardPerTokenStored;
         }
 
         return
             rewardPerTokenStored +
-            (
-                (lastTimeRewardApplicable() - lastUpdateTime) *
-                rewardRate *
-                1e18
-            ) /
-            _totalSupply;
+            ((lastTimeRewardApplicable() - updatedAt) * rewardRate * 1e18) /
+            totalSupply;
     }
 
     function earned(address account) public view returns (uint256) {
         return
-            (
-                _balances[account] *
-                (rewardPerToken() - userRewardPerTokenPaid[account])
-            ) /
-            1e18 +
+            ((balanceOf[account] *
+                (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18) +
             rewards[account];
     }
 
     function stake(uint256 amount) external updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
 
-        _totalSupply += amount;
-        _balances[msg.sender] += amount;
+        totalSupply += amount;
+        balanceOf[msg.sender] += amount;
 
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -108,10 +89,10 @@ contract StakingRewards is Ownable {
 
     function withdraw(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
-        require(_balances[msg.sender] >= amount, "Not enough staked");
+        require(balanceOf[msg.sender] >= amount, "Not enough staked");
 
-        _totalSupply -= amount;
-        _balances[msg.sender] -= amount;
+        totalSupply -= amount;
+        balanceOf[msg.sender] -= amount;
 
         stakingToken.safeTransfer(msg.sender, amount);
 
@@ -120,6 +101,7 @@ contract StakingRewards is Ownable {
 
     function claimReward() public updateReward(msg.sender) {
         uint256 reward = rewards[msg.sender];
+
         require(reward > 0, "No reward");
 
         rewards[msg.sender] = 0;
@@ -129,37 +111,45 @@ contract StakingRewards is Ownable {
     }
 
     function exit() external {
-        uint256 amount = _balances[msg.sender];
+        uint256 stakedAmount = balanceOf[msg.sender];
 
-        withdraw(amount);
-        claimReward();
+        require(stakedAmount > 0, "No staked balance");
+
+        withdraw(stakedAmount);
+
+        uint256 reward = rewards[msg.sender];
+
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+
+            emit RewardPaid(msg.sender, reward);
+        }
     }
 
-    function notifyRewardAmount(uint256 reward)
-        external
-        onlyOwner
-        updateReward(address(0))
-    {
-        require(reward > 0, "Invalid reward");
+    function notifyRewardAmount(
+        uint256 amount
+    ) external onlyOwner updateReward(address(0)) {
+        require(amount > 0, "Invalid reward amount");
 
-        if (block.timestamp >= periodFinish) {
-            rewardRate = reward / duration;
+        if (block.timestamp >= finishAt) {
+            rewardRate = amount / duration;
         } else {
-            uint256 remaining = periodFinish - block.timestamp;
-            uint256 leftover = remaining * rewardRate;
+            uint256 remainingRewards = (finishAt - block.timestamp) *
+                rewardRate;
 
-            rewardRate = (reward + leftover) / duration;
+            rewardRate = (amount + remainingRewards) / duration;
         }
 
-        require(rewardRate > 0, "Reward too small");
+        require(rewardRate > 0, "Reward rate is zero");
         require(
             rewardRate * duration <= rewardToken.balanceOf(address(this)),
             "Insufficient reward balance"
         );
 
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp + duration;
+        finishAt = block.timestamp + duration;
+        updatedAt = block.timestamp;
 
-        emit RewardAdded(reward, duration);
+        emit RewardAdded(amount);
     }
 }

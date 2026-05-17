@@ -80,12 +80,6 @@
         "internalType": "uint256",
         "name": "reward",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "duration",
-        "type": "uint256"
       }
     ],
     "name": "RewardAdded",
@@ -152,7 +146,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "account",
+        "name": "",
         "type": "address"
       }
     ],
@@ -215,7 +209,7 @@
   },
   {
     "inputs": [],
-    "name": "lastTimeRewardApplicable",
+    "name": "finishAt",
     "outputs": [
       {
         "internalType": "uint256",
@@ -228,7 +222,7 @@
   },
   {
     "inputs": [],
-    "name": "lastUpdateTime",
+    "name": "lastTimeRewardApplicable",
     "outputs": [
       {
         "internalType": "uint256",
@@ -243,7 +237,7 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "reward",
+        "name": "amount",
         "type": "uint256"
       }
     ],
@@ -260,19 +254,6 @@
         "internalType": "address",
         "name": "",
         "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "periodFinish",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -406,6 +387,19 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "updatedAt",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
