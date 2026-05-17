@@ -1,3 +1,5 @@
+import { HARDHAT_CHAIN_ID, SYMBOLS } from "../config/contracts";
+
 const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
 const PINATA_ENDPOINT = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
 const LOCAL_IPFS_KEY = "dexck-local-ipfs-cache";
@@ -100,31 +102,48 @@ export async function retrieveJsonFromIPFS(cid) {
   return response.json();
 }
 
-export function createTokenList({ tokenA, tokenB, amm }) {
+export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
   return {
     name: "DEXCK Token List",
     description: "Supported tokens for DEXCK AMM demo",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
+    chainId: HARDHAT_CHAIN_ID,
     amm,
     tokens: [
       {
-        chainId: 31337,
-        name: "Token A",
-        symbol: "TKA",
+        chainId: HARDHAT_CHAIN_ID,
+        name: "Demo Token A",
+        symbol: SYMBOLS.tokenA,
         decimals: 18,
         address: tokenA,
         logoURI: "",
       },
       {
-        chainId: 31337,
-        name: "Token B",
-        symbol: "TKB",
+        chainId: HARDHAT_CHAIN_ID,
+        name: "Demo Token B",
+        symbol: SYMBOLS.tokenB,
         decimals: 18,
         address: tokenB,
         logoURI: "",
       },
-    ],
+      {
+        chainId: HARDHAT_CHAIN_ID,
+        name: "AMM LP Token",
+        symbol: SYMBOLS.lpToken,
+        decimals: 18,
+        address: lpToken || "",
+        logoURI: "",
+      },
+      {
+        chainId: HARDHAT_CHAIN_ID,
+        name: "DEX Reward Token",
+        symbol: SYMBOLS.rewardToken,
+        decimals: 18,
+        address: rewardToken || "",
+        logoURI: "",
+      },
+    ].filter((token) => token.address),
   };
 }
 
@@ -153,6 +172,7 @@ export function createTradeReceipt({
   tokenIn,
   tokenOut,
   amountIn,
+  amountOut,
   minAmountOut,
   blockNumber,
 }) {
@@ -165,6 +185,7 @@ export function createTradeReceipt({
     tokenIn,
     tokenOut,
     amountIn,
+    amountOut,
     minAmountOut,
     blockNumber,
     createdAt: new Date().toISOString(),

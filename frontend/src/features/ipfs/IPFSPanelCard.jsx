@@ -38,6 +38,8 @@ export default function IPFSPanelCard({ walletAddress }) {
         tokenA: CONTRACTS.tokenA,
         tokenB: CONTRACTS.tokenB,
         amm: CONTRACTS.amm,
+        lpToken: CONTRACTS.lpToken,
+        rewardToken: CONTRACTS.rewardToken,
       });
       const result = await uploadJsonToIPFS(tokenList, "dexck-token-list.json");
       setTokenListCid(result.cid);
@@ -120,7 +122,7 @@ export default function IPFSPanelCard({ walletAddress }) {
             icon={<FileText size={18} />}
             title="Token List JSON"
             badge="metadata"
-            description="Upload supported token metadata: TKA, TKB, contract addresses, and AMM pair information."
+            description="Upload supported token metadata, contract addresses, LP token, reward token, and AMM pair information."
           >
             <Button type="button" onClick={handleUploadTokenList}>
               <UploadCloud size={16} />
