@@ -6,12 +6,12 @@
     "bob": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
   },
   "contracts": {
-    "tokenA": "0x4ed7c70F96B99c776995fB64377f0d4aB3B0e1C1",
-    "tokenB": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-    "amm": "0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f",
-    "lpToken": "0x763e69d24a03c0c8B256e470D9fE9e0753504D07",
-    "rewardToken": "0x4A679253410272dd5232B3Ff7cF5dbB88f295319",
-    "stakingRewards": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F"
+    "tokenA": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "tokenB": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "amm": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+    "lpToken": "0x75537828f2ce51be7289709686A69CbFDbB714F1",
+    "rewardToken": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "stakingRewards": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
   },
   "symbols": {
     "tokenA": "DTA",
@@ -23,5 +23,5 @@
     "reserveA": "5000000000000000000000",
     "reserveB": "5000000000000000000000"
   },
-  "createdAt": "2026-05-17T08:22:26.520Z"
+  "createdAt": "2026-05-24T03:49:57.441Z"
 }
