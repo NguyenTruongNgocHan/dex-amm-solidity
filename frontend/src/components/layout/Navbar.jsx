@@ -1,4 +1,15 @@
-import { BarChart3, Droplets, Home, LayoutDashboard, Moon, Sprout, Sun, Wallet, ArrowDownUp } from "lucide-react";
+import {
+  ArrowDownUp,
+  BarChart3,
+  Droplets,
+  Home,
+  LayoutDashboard,
+  Moon,
+  ShieldCheck,
+  Sprout,
+  Sun,
+  Wallet,
+} from "lucide-react";
 import Button from "../common/Button";
 import useTheme from "../../hooks/useTheme";
 import { shortAddress } from "../../lib/format";
@@ -9,6 +20,7 @@ const navItems = [
   { key: "liquidity", label: "Liquidity", icon: <Droplets size={15} /> },
   { key: "farm", label: "Farm", icon: <Sprout size={15} /> },
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} /> },
+  { key: "admin", label: "Admin", icon: <ShieldCheck size={15} /> },
 ];
 
 export default function Navbar({
@@ -32,7 +44,9 @@ export default function Navbar({
             : "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
         }`}
       >
-        <span className={active ? "text-current" : "text-[var(--primary)]"}>{icon}</span>
+        <span className={active ? "text-current" : "text-[var(--primary)]"}>
+          {icon}
+        </span>
         {label}
       </button>
     );
@@ -72,7 +86,10 @@ export default function Navbar({
             {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
-          <Button variant={walletAddress ? "secondary" : "primary"} onClick={onConnect}>
+          <Button
+            variant={walletAddress ? "secondary" : "primary"}
+            onClick={onConnect}
+          >
             <Wallet size={16} />
             {walletAddress ? shortAddress(walletAddress) : "Connect"}
           </Button>

@@ -3,8 +3,9 @@ import HomePage from "./pages/HomePage";
 import TradePage from "./pages/TradePage";
 import LiquidityPage from "./pages/LiquidityPage";
 import DashboardPage from "./pages/DashboardPage";
-import useWallet from "./hooks/useWallet";
 import FarmPage from "./pages/FarmPage";
+import AdminPage from "./pages/AdminPage";
+import useWallet from "./hooks/useWallet";
 
 function App() {
   const [page, setPage] = useState("home");
@@ -26,6 +27,8 @@ function App() {
   if (page === "liquidity") return <LiquidityPage {...commonProps} />;
   if (page === "farm") return <FarmPage {...commonProps} />;
   if (page === "dashboard") return <DashboardPage {...commonProps} />;
+  if (page === "admin") return <AdminPage {...commonProps} />;
+
   return <HomePage {...commonProps} />;
 }
 

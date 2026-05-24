@@ -209,14 +209,12 @@ describe("StakingRewards", function () {
     ).to.be.revertedWith("No reward");
   });
 
-  it("should only allow owner to notify reward amount", async function () {
+  it("should only allow operator to notify reward amount", async function () {
     await expect(
       stakingRewards.connect(bob).notifyRewardAmount(toWei("1000"))
-    )
-      .to.be.revertedWithCustomError(
-        stakingRewards,
-        "OwnableUnauthorizedAccount"
-      )
-      .withArgs(bob.address);
+    ).to.be.revertedWithCustomError(
+      stakingRewards,
+      "AccessControlUnauthorizedAccount"
+    );
   });
 });

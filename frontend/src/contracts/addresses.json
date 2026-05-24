@@ -2,16 +2,29 @@
   "chainId": 31337,
   "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
   "demoAccounts": {
+    "admin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "operator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "auditor": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
     "alice": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "bob": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
   },
+  "roles": {
+    "defaultAdminRole": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "operatorRole": "0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929",
+    "auditorRole": "0x59a1c48e5837ad7a7f3dcedcbe129bf3249ec4fbf651fd4f5e2600ead39fe2f5",
+    "model": {
+      "admin": "Can grant/revoke roles and pause/unpause the system.",
+      "operator": "Can enable/disable trading and configure operational parameters.",
+      "auditor": "Can submit audit notes and review role-controlled system activity."
+    }
+  },
   "contracts": {
-    "tokenA": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "tokenB": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "amm": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "lpToken": "0x75537828f2ce51be7289709686A69CbFDbB714F1",
-    "rewardToken": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "stakingRewards": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9"
+    "tokenA": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "tokenB": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
+    "amm": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
+    "lpToken": "0x24B3c7704709ed1491473F30393FFc93cFB0FC34",
+    "rewardToken": "0x9A9f2CCfdE556A7E9Ff0848998Aa4a0CFD8863AE",
+    "stakingRewards": "0x68B1D87F95878fE05B998F19b66F4baba5De1aed"
   },
   "symbols": {
     "tokenA": "DTA",
@@ -23,5 +36,5 @@
     "reserveA": "5000000000000000000000",
     "reserveB": "5000000000000000000000"
   },
-  "createdAt": "2026-05-24T03:49:57.441Z"
+  "createdAt": "2026-05-24T04:15:57.721Z"
 }

@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./LPToken.sol";
 
-contract SimpleAMM is ReentrancyGuard {
+contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant AUDITOR_ROLE = keccak256("AUDITOR_ROLE");
 
     uint256 public constant FEE_NUMERATOR = 997;
     uint256 public constant FEE_DENOMINATOR = 1000;
@@ -20,6 +25,8 @@ contract SimpleAMM is ReentrancyGuard {
     uint256 public reserveA;
     uint256 public reserveB;
     uint256 public totalLiquidity;
+
+    bool public tradingEnabled = true;
 
     event LiquidityAdded(
         address indexed provider,
@@ -43,6 +50,14 @@ contract SimpleAMM is ReentrancyGuard {
         uint256 amountOut
     );
 
+    event TradingStatusChanged(address indexed operator, bool enabled);
+
+    event AuditNoteSubmitted(
+        address indexed auditor,
+        bytes32 indexed subject,
+        string noteURI
+    );
+
     constructor(address _tokenA, address _tokenB) {
         require(_tokenA != address(0), "Invalid token A");
         require(_tokenB != address(0), "Invalid token B");
@@ -51,6 +66,10 @@ contract SimpleAMM is ReentrancyGuard {
         tokenA = IERC20(_tokenA);
         tokenB = IERC20(_tokenB);
         lpToken = new LPToken();
+
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(OPERATOR_ROLE, msg.sender);
+        _grantRole(AUDITOR_ROLE, msg.sender);
     }
 
     modifier ensureDeadline(uint256 deadline) {
@@ -58,10 +77,68 @@ contract SimpleAMM is ReentrancyGuard {
         _;
     }
 
+    modifier whenTradingEnabled() {
+        require(tradingEnabled, "Trading disabled");
+        _;
+    }
+
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
+    function setTradingEnabled(
+        bool enabled
+    ) external onlyRole(OPERATOR_ROLE) {
+        tradingEnabled = enabled;
+        emit TradingStatusChanged(msg.sender, enabled);
+    }
+
+    function submitAuditNote(
+        bytes32 subject,
+        string calldata noteURI
+    ) external onlyRole(AUDITOR_ROLE) {
+        require(subject != bytes32(0), "Invalid subject");
+        require(bytes(noteURI).length > 0, "Invalid note URI");
+
+        emit AuditNoteSubmitted(msg.sender, subject, noteURI);
+    }
+
+    function getRoleSummary(
+        address account
+    )
+        external
+        view
+        returns (
+            bool isAdmin,
+            bool isOperator,
+            bool isAuditor,
+            bool isPaused,
+            bool isTradingEnabled
+        )
+    {
+        return (
+            hasRole(DEFAULT_ADMIN_ROLE, account),
+            hasRole(OPERATOR_ROLE, account),
+            hasRole(AUDITOR_ROLE, account),
+            paused(),
+            tradingEnabled
+        );
+    }
+
     function addLiquidity(
         uint256 amountADesired,
         uint256 amountBDesired
-    ) external nonReentrant returns (uint256 liquidityMinted) {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        whenTradingEnabled
+        returns (uint256 liquidityMinted)
+    {
         return _addLiquidity(amountADesired, amountBDesired, 0);
     }
 
@@ -73,6 +150,8 @@ contract SimpleAMM is ReentrancyGuard {
     )
         external
         nonReentrant
+        whenNotPaused
+        whenTradingEnabled
         ensureDeadline(deadline)
         returns (uint256 liquidityMinted)
     {
@@ -81,7 +160,13 @@ contract SimpleAMM is ReentrancyGuard {
 
     function removeLiquidity(
         uint256 liquidityAmount
-    ) external nonReentrant returns (uint256 amountA, uint256 amountB) {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        whenTradingEnabled
+        returns (uint256 amountA, uint256 amountB)
+    {
         return _removeLiquidity(liquidityAmount, 0, 0);
     }
 
@@ -93,6 +178,8 @@ contract SimpleAMM is ReentrancyGuard {
     )
         external
         nonReentrant
+        whenNotPaused
+        whenTradingEnabled
         ensureDeadline(deadline)
         returns (uint256 amountA, uint256 amountB)
     {
@@ -102,7 +189,13 @@ contract SimpleAMM is ReentrancyGuard {
     function swapExactTokenAForTokenB(
         uint256 amountAIn,
         uint256 minAmountBOut
-    ) external nonReentrant returns (uint256 amountBOut) {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        whenTradingEnabled
+        returns (uint256 amountBOut)
+    {
         return _swap(address(tokenA), amountAIn, minAmountBOut);
     }
 
@@ -113,6 +206,8 @@ contract SimpleAMM is ReentrancyGuard {
     )
         external
         nonReentrant
+        whenNotPaused
+        whenTradingEnabled
         ensureDeadline(deadline)
         returns (uint256 amountBOut)
     {
@@ -122,7 +217,13 @@ contract SimpleAMM is ReentrancyGuard {
     function swapExactTokenBForTokenA(
         uint256 amountBIn,
         uint256 minAmountAOut
-    ) external nonReentrant returns (uint256 amountAOut) {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+        whenTradingEnabled
+        returns (uint256 amountAOut)
+    {
         return _swap(address(tokenB), amountBIn, minAmountAOut);
     }
 
@@ -133,6 +234,8 @@ contract SimpleAMM is ReentrancyGuard {
     )
         external
         nonReentrant
+        whenNotPaused
+        whenTradingEnabled
         ensureDeadline(deadline)
         returns (uint256 amountAOut)
     {
@@ -164,12 +267,17 @@ contract SimpleAMM is ReentrancyGuard {
         require(amountIn > 0, "Invalid input");
         require(reserveA > 0 && reserveB > 0, "Empty pool");
 
-        uint256 amountInWithFee = (amountIn * FEE_NUMERATOR) / FEE_DENOMINATOR;
+        uint256 amountInWithFee = (amountIn * FEE_NUMERATOR) /
+            FEE_DENOMINATOR;
 
         if (tokenIn == address(tokenA)) {
-            amountOut = (amountInWithFee * reserveB) / (reserveA + amountInWithFee);
+            amountOut =
+                (amountInWithFee * reserveB) /
+                (reserveA + amountInWithFee);
         } else if (tokenIn == address(tokenB)) {
-            amountOut = (amountInWithFee * reserveA) / (reserveB + amountInWithFee);
+            amountOut =
+                (amountInWithFee * reserveA) /
+                (reserveB + amountInWithFee);
         } else {
             revert("Unsupported token");
         }
@@ -236,7 +344,10 @@ contract SimpleAMM is ReentrancyGuard {
 
         require(amountAUsed > 0 && amountBUsed > 0, "Zero liquidity amount");
         require(quotedLiquidity > 0, "Zero liquidity minted");
-        require(quotedLiquidity >= minLiquidity, "Insufficient liquidity minted");
+        require(
+            quotedLiquidity >= minLiquidity,
+            "Insufficient liquidity minted"
+        );
 
         tokenA.safeTransferFrom(msg.sender, address(this), amountAUsed);
         tokenB.safeTransferFrom(msg.sender, address(this), amountBUsed);
@@ -247,7 +358,12 @@ contract SimpleAMM is ReentrancyGuard {
 
         lpToken.mint(msg.sender, quotedLiquidity);
 
-        emit LiquidityAdded(msg.sender, amountAUsed, amountBUsed, quotedLiquidity);
+        emit LiquidityAdded(
+            msg.sender,
+            amountAUsed,
+            amountBUsed,
+            quotedLiquidity
+        );
 
         return quotedLiquidity;
     }
