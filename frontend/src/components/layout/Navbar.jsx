@@ -17,48 +17,13 @@ import { shortAddress } from "../../lib/format";
 import useAccessProfile from "../../hooks/useAccessProfile";
 
 const navItems = [
-  {
-    key: "home",
-    label: "Home",
-    icon: <Home size={15} />,
-    access: "public",
-  },
-  {
-    key: "trade",
-    label: "Trade",
-    icon: <ArrowDownUp size={15} />,
-    access: "public",
-  },
-  {
-    key: "liquidity",
-    label: "Liquidity",
-    icon: <Droplets size={15} />,
-    access: "liquidity",
-  },
-  {
-    key: "farm",
-    label: "Farm",
-    icon: <Sprout size={15} />,
-    access: "connected",
-  },
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: <LayoutDashboard size={15} />,
-    access: "connected",
-  },
-  {
-    key: "access",
-    label: "Access",
-    icon: <ShieldCheck size={15} />,
-    access: "connected",
-  },
-  {
-    key: "admin",
-    label: "Admin",
-    icon: <ShieldCheck size={15} />,
-    access: "admin",
-  },
+  { key: "home", label: "Home", icon: <Home size={15} />, access: "public" },
+  { key: "trade", label: "Trade", icon: <ArrowDownUp size={15} />, access: "public" },
+  { key: "liquidity", label: "Liquidity", icon: <Droplets size={15} />, access: "public" },
+  { key: "farm", label: "Farm", icon: <Sprout size={15} />, access: "connected" },
+  { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} />, access: "public" },
+  { key: "access", label: "Access", icon: <ShieldCheck size={15} />, access: "connected" },
+  { key: "admin", label: "Admin", icon: <ShieldCheck size={15} />, access: "admin" },
 ];
 
 export default function Navbar({
@@ -74,22 +39,14 @@ export default function Navbar({
   function canAccess(item) {
     if (item.access === "public") return true;
     if (item.access === "connected") return Boolean(walletAddress);
-    if (item.access === "liquidity") return Boolean(walletAddress);
     if (item.access === "admin") return profile.canViewAdmin;
-
     return false;
   }
 
   function getAccessHint(item) {
-    if (item.access === "public") return "Public";
+    if (item.access === "public") return "Public view";
     if (item.access === "connected") return "Connect wallet required";
-    if (item.access === "liquidity") {
-      return profile.isLpApprovalRequired
-        ? "Verified LP required to add liquidity"
-        : "Wallet required";
-    }
     if (item.access === "admin") return "Admin / Operator / Auditor only";
-
     return "";
   }
 
@@ -105,12 +62,13 @@ export default function Navbar({
         onClick={() => {
           if (allowed) onNavigate?.(item.key);
         }}
-        className={`group inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-bold transition duration-200 ${active
+        className={`group inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-bold transition duration-200 ${
+          active
             ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15 dark:bg-white dark:text-slate-950"
             : allowed
-              ? "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
-              : "cursor-not-allowed text-[var(--muted)] opacity-40"
-          }`}
+            ? "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
+            : "cursor-not-allowed text-[var(--muted)] opacity-40"
+        }`}
       >
         <span className={active ? "text-current" : "text-[var(--primary)]"}>
           {allowed ? item.icon : <Lock size={15} />}
@@ -151,10 +109,10 @@ export default function Navbar({
               {profile.isAdmin
                 ? "Admin"
                 : profile.isOperator
-                  ? "Operator"
-                  : profile.isAuditor
-                    ? "Auditor"
-                    : profile.participantLabel}
+                ? "Operator"
+                : profile.isAuditor
+                ? "Auditor"
+                : profile.participantLabel}
             </div>
           ) : null}
 

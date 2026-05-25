@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ethers } from "ethers";
+import { CONTRACTS } from "../config/contracts";
 import { getAMM, getStakingRewards } from "../lib/contracts";
 
 export const ROLE_KEYS = {
@@ -65,7 +66,17 @@ export default function useAdminControls(wallet) {
         ammAuditor,
         ammPaused,
         tradingEnabled,
+        lpApprovalRequired,
+        participantStatus,
       ] = await contracts.amm.getRoleSummary(wallet.address);
+
+      const [
+        isPaused,
+        isTradingEnabled,
+        isTokenAWhitelisted,
+        isTokenBWhitelisted,
+        isLpApprovalRequired,
+      ] = await contracts.amm.getProductionPolicy();
 
       const [
         stakingAdmin,
@@ -78,8 +89,12 @@ export default function useAdminControls(wallet) {
         isAdmin: ammAdmin,
         isOperator: ammOperator,
         isAuditor: ammAuditor,
-        paused: ammPaused,
-        tradingEnabled,
+        paused: ammPaused || isPaused,
+        tradingEnabled: tradingEnabled && isTradingEnabled,
+        lpApprovalRequired: lpApprovalRequired || isLpApprovalRequired,
+        participantStatus: Number(participantStatus),
+        tokenAWhitelisted: isTokenAWhitelisted,
+        tokenBWhitelisted: isTokenBWhitelisted,
       });
 
       setStakingState({
@@ -158,6 +173,31 @@ export default function useAdminControls(wallet) {
     });
   }
 
+  async function setTokenWhitelist(tokenAddress, whitelisted) {
+    await runTx("Update token whitelist", async () => {
+      const signed = signerContracts();
+      return signed.amm.setTokenWhitelist(tokenAddress, whitelisted);
+    });
+  }
+
+  async function setLiquidityProviderApprovalRequired(required) {
+    await runTx("Update LP approval policy", async () => {
+      const signed = signerContracts();
+      return signed.amm.setLiquidityProviderApprovalRequired(required);
+    });
+  }
+
+  async function reviewLiquidityProvider(participant, approved, evidenceURI) {
+    await runTx(approved ? "Approve liquidity provider" : "Reject liquidity provider", async () => {
+      const signed = signerContracts();
+      return signed.amm.reviewLiquidityProvider(
+        participant,
+        approved,
+        evidenceURI || ""
+      );
+    });
+  }
+
   async function submitAuditNote(target, subjectText, noteURI) {
     await runTx("Submit audit note", async () => {
       const contract = getTargetContract(target);
@@ -175,12 +215,17 @@ export default function useAdminControls(wallet) {
     ammState,
     stakingState,
     connected,
+    tokenAAddress: CONTRACTS.tokenA,
+    tokenBAddress: CONTRACTS.tokenB,
     reload,
     grantRole,
     revokeRole,
     pause,
     unpause,
     setTradingEnabled,
+    setTokenWhitelist,
+    setLiquidityProviderApprovalRequired,
+    reviewLiquidityProvider,
     submitAuditNote,
   };
 }

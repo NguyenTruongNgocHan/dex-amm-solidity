@@ -211,6 +211,82 @@ export default function AdminPage({ onNavigate, wallet }) {
               </ControlBlock>
             </div>
           </SurfaceCard>
+
+          <SurfaceCard className="mt-5 p-5">
+            <SectionTitle
+              icon={<ShieldCheck size={18} />}
+              title="Production Policy"
+              subtitle="Operator controls token whitelist and verified LP policy. This prevents unsafe token/pool operations while keeping swaps permissionless."
+            />
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              <ControlBlock
+                title="Token A Whitelist"
+                state={admin.ammState?.tokenAWhitelisted ? "Whitelisted" : "Blocked"}
+              >
+                <Button
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setTokenWhitelist(admin.tokenAAddress, true)}
+                >
+                  Whitelist Token A
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setTokenWhitelist(admin.tokenAAddress, false)}
+                >
+                  Block Token A
+                </Button>
+              </ControlBlock>
+
+              <ControlBlock
+                title="Token B Whitelist"
+                state={admin.ammState?.tokenBWhitelisted ? "Whitelisted" : "Blocked"}
+              >
+                <Button
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setTokenWhitelist(admin.tokenBAddress, true)}
+                >
+                  Whitelist Token B
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setTokenWhitelist(admin.tokenBAddress, false)}
+                >
+                  Block Token B
+                </Button>
+              </ControlBlock>
+
+              <ControlBlock
+                title="Verified LP Policy"
+                state={admin.ammState?.lpApprovalRequired ? "Required" : "Open"}
+              >
+                <Button
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setLiquidityProviderApprovalRequired(true)}
+                >
+                  Require Verified LP
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  disabled={!canOperate || admin.loading}
+                  onClick={() => admin.setLiquidityProviderApprovalRequired(false)}
+                >
+                  Open LP Access
+                </Button>
+              </ControlBlock>
+            </div>
+
+            {!canOperate ? (
+              <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
+                Current wallet is not Operator. Connect an operator wallet to manage production policy.
+              </p>
+            ) : null}
+          </SurfaceCard>
         </div>
 
         <SurfaceCard className="mt-5 p-5">
