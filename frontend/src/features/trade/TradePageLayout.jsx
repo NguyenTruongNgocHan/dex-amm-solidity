@@ -36,8 +36,8 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
         <StatusBanner message={showStatus} />
       </div>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_380px]">
-        <aside className="grid gap-5 xl:grid-rows-[minmax(320px,1fr)_minmax(320px,1fr)]">
+      <section className="mt-6 grid items-stretch gap-5 xl:grid-cols-[260px_minmax(0,1fr)_380px]">
+        <aside className="grid min-h-[720px] gap-5 xl:grid-rows-2">
           <PortfolioSidebar
             ammData={amm.data}
             connected={Boolean(wallet.address)}
@@ -45,7 +45,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
           <MarketsSidebar ammData={amm.data} />
         </aside>
 
-        <section className="grid gap-5">
+        <section className="grid min-h-[720px] gap-5">
           <MarketOverviewCard
             ammData={amm.data}
             loading={amm.loading}
@@ -54,12 +54,10 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
 
           <PoolInsightStrip ammData={amm.data} activity={activity} />
 
-          <div className="min-h-[360px]">
-            <TradeChartMock ammData={amm.data} />
-          </div>
+          <TradeChartMock ammData={amm.data} />
         </section>
 
-        <aside className="pro-sticky h-fit">
+        <aside className="flex min-h-[720px]">
           <TradePanelCard
             ammData={amm.data}
             connected={Boolean(wallet.address)}

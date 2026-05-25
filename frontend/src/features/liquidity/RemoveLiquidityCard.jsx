@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Flame } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
+import Button from "../../components/common/Button";
 import { SYMBOLS } from "../../config/contracts";
 import { calculateRemoveLiquidityPreview } from "../../lib/liquidityMath";
 
@@ -22,22 +24,20 @@ export default function RemoveLiquidityCard({
       ammData.reserveBRaw,
       ammData.totalLiquidityRaw
     );
-  }, [lpAmount, ammData.reserveARaw, ammData.reserveBRaw, ammData.totalLiquidityRaw]);
+  }, [
+    lpAmount,
+    ammData.reserveARaw,
+    ammData.reserveBRaw,
+    ammData.totalLiquidityRaw,
+  ]);
 
   const removePercent = useMemo(() => {
     const lp = Number(cleanNumber(ammData.lpBalance));
     const removing = Number(cleanNumber(lpAmount));
 
     if (!lp || !removing) return "0.00";
+
     return Math.min((removing / lp) * 100, 100).toFixed(2);
-  }, [ammData.lpBalance, lpAmount]);
-
-  const remainingLP = useMemo(() => {
-    const current = Number(cleanNumber(ammData.lpBalance));
-    const removing = Number(cleanNumber(lpAmount));
-    const remaining = Math.max(current - removing, 0);
-
-    return remaining.toLocaleString("en-US", { maximumFractionDigits: 6 });
   }, [ammData.lpBalance, lpAmount]);
 
   async function handleRemoveLiquidity() {
@@ -60,149 +60,133 @@ export default function RemoveLiquidityCard({
     setLpAmount(((balance * percent) / 100).toFixed(6).replace(/\.?0+$/, ""));
   }
 
-  function useMax() {
-    setLpAmount(cleanNumber(ammData.lpBalance));
-  }
-
   return (
-    <SurfaceCard className="flex h-full flex-col p-5">
-      <div className="flex items-start justify-between gap-4">
+    <SurfaceCard
+      variant="panel"
+      fill
+      className="flex min-h-[650px] flex-1 flex-col p-5"
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-[18px] font-bold text-[var(--text)]">
+          <div className="dex-chip dex-chip-danger">Burn LP</div>
+
+          <h2 className="mt-3 text-2xl font-black text-[var(--text)]">
             Remove Liquidity
-          </h3>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Burn {SYMBOLS.lpToken} to withdraw your proportional pool assets.
+          </h2>
+
+          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+            Burn {SYMBOLS.lpToken} and withdraw your reserve share.
           </p>
         </div>
 
-        <div className="rounded-2xl bg-red-500/10 px-3 py-2 text-xs font-black text-red-400">
-          burn
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--danger-soft)] text-[var(--danger)]">
+          <Flame size={22} />
         </div>
       </div>
 
-      <div className="mt-5">
+      <div className="input-shell p-4">
         <div className="mb-2 flex items-center justify-between">
-          <label className="block text-sm font-medium text-[var(--text)]">
+          <label className="text-sm font-black text-[var(--muted)]">
             LP Amount
           </label>
 
           <button
-            onClick={useMax}
-            className="text-xs font-bold text-[var(--primary-dark)]"
+            onClick={() => setLpAmount(cleanNumber(ammData.lpBalance))}
+            className="text-xs font-black text-[var(--primary-dark)]"
           >
             MAX
           </button>
         </div>
 
-        <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <input
-              value={lpAmount}
-              onChange={(e) => setLpAmount(e.target.value)}
-              className="w-full bg-transparent text-[28px] font-bold leading-none text-[var(--text)] outline-none"
-            />
+        <div className="flex items-center gap-3">
+          <input
+            value={lpAmount}
+            onChange={(e) => setLpAmount(e.target.value)}
+            className="min-w-0 flex-1 bg-transparent text-3xl font-black text-[var(--text)] outline-none"
+          />
 
-            <div className="rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-sm font-bold text-[var(--text)]">
-              {SYMBOLS.lpToken}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {[25, 50, 75, 100].map((percent) => (
-            <button
-              key={percent}
-              onClick={() => setPercent(percent)}
-              className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-xs font-black text-[var(--muted)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]"
-            >
-              {percent === 100 ? "MAX" : `${percent}%`}
-            </button>
-          ))}
+          <span className="rounded-2xl bg-[var(--danger-soft)] px-3 py-2 text-sm font-black text-[var(--danger)]">
+            {SYMBOLS.lpToken}
+          </span>
         </div>
       </div>
 
-      <div className="mt-5 rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
-        <InfoRow
-          label="Your LP"
-          value={`${connected ? ammData.lpBalance : "—"} ${SYMBOLS.lpToken}`}
-        />
-        <InfoRow label="Removing" value={`${removePercent}% of your LP`} />
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        {[25, 50, 75, 100].map((percent) => (
+          <button
+            key={percent}
+            onClick={() => setPercent(percent)}
+            className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-xs font-black text-[var(--muted)] transition hover:border-[var(--danger-border)] hover:text-[var(--danger)]"
+          >
+            {percent === 100 ? "MAX" : `${percent}%`}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-5 rounded-[22px] border border-[var(--danger-border)] bg-[var(--danger-soft)] p-5">
+        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+          Burn Preview
+        </p>
+
+        <p className="mt-2 text-3xl font-black market-down">
+          {removePercent}%
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-3">
         <InfoRow
           label={`Receive ${SYMBOLS.tokenA}`}
           value={`${preview.amountALabel} ${SYMBOLS.tokenA}`}
           tone="success"
         />
+
         <InfoRow
           label={`Receive ${SYMBOLS.tokenB}`}
           value={`${preview.amountBLabel} ${SYMBOLS.tokenB}`}
-          tone="success"
+          tone="blue"
         />
-        <InfoRow label="Remaining LP" value={`${remainingLP} ${SYMBOLS.lpToken}`} />
-      </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <MiniInfo
-          label={`${SYMBOLS.tokenA} min receive`}
-          value={`${preview.amountALabel} ${SYMBOLS.tokenA}`}
-        />
-        <MiniInfo
-          label={`${SYMBOLS.tokenB} min receive`}
-          value={`${preview.amountBLabel} ${SYMBOLS.tokenB}`}
+        <InfoRow
+          label="Your LP"
+          value={`${connected ? ammData.lpBalance : "—"} ${SYMBOLS.lpToken}`}
         />
       </div>
 
-      <div className="mt-4 rounded-[18px] border border-cyan-400/20 bg-cyan-400/10 p-4">
-        <div className="text-xs font-black uppercase tracking-wide text-cyan-300">
-          Pool logic
-        </div>
-        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-          Removing liquidity burns your {SYMBOLS.lpToken} and returns{" "}
-          {SYMBOLS.tokenA}/{SYMBOLS.tokenB} based on your current pool share.
-        </p>
-      </div>
-
-      <div className="mt-4 rounded-[18px] border border-red-400/20 bg-red-400/10 p-4">
-        <div className="text-xs font-black uppercase tracking-wide text-red-300">
-          Burn preview
-        </div>
-        <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-          This action burns {lpAmount || "0"} {SYMBOLS.lpToken}. Your remaining LP
-          balance is estimated after confirmation.
-        </p>
-      </div>
-
-      <button
-        onClick={handleRemoveLiquidity}
+      <Button
+        variant="danger"
+        className="mt-auto w-full"
+        size="lg"
         disabled={liquidity.pending}
-        className="mt-auto w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={handleRemoveLiquidity}
       >
-        {!connected ? "Connect Wallet" : liquidity.pending ? "Processing..." : "Remove Liquidity"}
-      </button>
+        {!connected
+          ? "Connect Wallet"
+          : liquidity.pending
+          ? "Processing..."
+          : "Remove Liquidity"}
+      </Button>
     </SurfaceCard>
   );
 }
 
 function InfoRow({ label, value, tone = "neutral" }) {
-  const color = tone === "success" ? "text-emerald-400" : "text-[var(--text)]";
+  const color = {
+    success: "market-up",
+    blue: "text-[var(--blue)]",
+    neutral: "text-[var(--text)]",
+  }[tone];
 
   return (
-    <div className="mt-2 flex items-center justify-between gap-4 text-sm first:mt-0">
-      <span className="text-[var(--muted)]">{label}</span>
-      <span className={`max-w-[190px] truncate text-right font-bold ${color}`}>
+    <div className="dex-stat flex items-center justify-between gap-4">
+      <span className="truncate text-sm font-bold text-[var(--muted)]">
+        {label}
+      </span>
+
+      <span
+        className={`max-w-[170px] truncate text-right text-sm font-black ${color}`}
+      >
         {value}
       </span>
-    </div>
-  );
-}
-
-function MiniInfo({ label, value }) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-3">
-      <p className="text-xs text-[var(--muted)]">{label}</p>
-      <p className="mt-1 truncate text-sm font-black text-[var(--text)]">
-        {value}
-      </p>
     </div>
   );
 }

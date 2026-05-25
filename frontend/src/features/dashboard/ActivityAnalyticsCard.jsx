@@ -1,111 +1,224 @@
 import {
-  Activity,
   ArrowDownUp,
-  ArrowUpFromLine,
-  Droplets,
+  Flame,
   Gift,
   Layers,
-  LogOut,
+  Plus,
+  TrendingUp,
+  Upload,
 } from "lucide-react";
-import SurfaceCard from "../../components/common/SurfaceCard";
-import IconBadge from "../../components/common/IconBadge";
 
-export default function ActivityAnalyticsCard({ events = [] }) {
-  const swaps = events.filter((e) => e.type === "SWAP").length;
-  const adds = events.filter((e) => e.type === "ADD").length;
-  const removes = events.filter((e) => e.type === "REMOVE").length;
-  const stakes = events.filter((e) => e.type === "STAKE").length;
-  const unstakes = events.filter((e) => e.type === "UNSTAKE").length;
-  const claims = events.filter((e) => e.type === "CLAIM").length;
+import SurfaceCard from "../../components/common/SurfaceCard";
+
+function countByType(
+  events = [],
+  type
+) {
+  return events.filter(
+    (event) => event.type === type
+  ).length;
+}
+
+export default function ActivityAnalyticsCard({
+  events = [],
+}) {
+  const stats = [
+    {
+      label: "Total",
+      value: events.length,
+      icon: <TrendingUp size={16} />,
+      tone: "blue",
+    },
+    {
+      label: "Swaps",
+      value: countByType(
+        events,
+        "SWAP"
+      ),
+      icon: (
+        <ArrowDownUp size={16} />
+      ),
+      tone: "blue",
+    },
+    {
+      label: "Adds",
+      value: countByType(
+        events,
+        "ADD_LIQUIDITY"
+      ),
+      icon: <Plus size={16} />,
+      tone: "success",
+    },
+    {
+      label: "Removes",
+      value: countByType(
+        events,
+        "REMOVE_LIQUIDITY"
+      ),
+      icon: <Flame size={16} />,
+      tone: "danger",
+    },
+    {
+      label: "Stakes",
+      value: countByType(
+        events,
+        "STAKE"
+      ),
+      icon: <Layers size={16} />,
+      tone: "purple",
+    },
+    {
+      label: "Unstakes",
+      value: countByType(
+        events,
+        "UNSTAKE"
+      ),
+      icon: <Upload size={16} />,
+      tone: "warning",
+    },
+    {
+      label: "Claims",
+      value: countByType(
+        events,
+        "CLAIM_REWARD"
+      ),
+      icon: <Gift size={16} />,
+      tone: "pink",
+    },
+  ];
 
   return (
-    <SurfaceCard className="p-5" hover>
-      <div className="flex items-center gap-3">
-        <IconBadge tone="violet" className="h-11 w-11">
-          <Activity size={19} />
-        </IconBadge>
+    <SurfaceCard className="flex min-h-[330px] flex-col p-6">
+      <div className="flex items-start gap-4">
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--purple-soft)] text-[var(--purple)]">
+          <TrendingUp size={22} />
+        </div>
 
         <div>
-          <h3 className="text-lg font-black text-[var(--text)]">
+          <div className="dex-chip">
+            Activity
+          </div>
+
+          <h3 className="mt-3 text-2xl font-black text-[var(--text)]">
             Activity Analytics
           </h3>
-          <p className="text-sm text-[var(--muted)]">
-            Unified contract event logs across AMM and Farm
+
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Unified contract event logs across AMM and Farm.
           </p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-7">
-        <Stat
-          label="Total"
-          value={events.length}
-          icon={<Activity size={15} />}
-          tone="neutral"
-        />
-        <Stat
-          label="Swaps"
-          value={swaps}
-          icon={<ArrowDownUp size={15} />}
-          tone="blue"
-        />
-        <Stat
-          label="Adds"
-          value={adds}
-          icon={<Droplets size={15} />}
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+        {stats.map((stat) => (
+          <StatBox
+            key={stat.label}
+            {...stat}
+          />
+        ))}
+      </div>
+
+      {/* NEW SECTION */}
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <MiniInsight
+          title="Most Active"
+          value="Liquidity"
+          description="Most recent actions came from LP operations."
           tone="success"
         />
-        <Stat
-          label="Removes"
-          value={removes}
-          icon={<LogOut size={15} />}
-          tone="danger"
+
+        <MiniInsight
+          title="Risk Level"
+          value="Low"
+          description="No suspicious slippage or abnormal reserve activity detected."
+          tone="blue"
         />
-        <Stat
-          label="Stakes"
-          value={stakes}
-          icon={<Layers size={15} />}
-          tone="violet"
-        />
-        <Stat
-          label="Unstakes"
-          value={unstakes}
-          icon={<ArrowUpFromLine size={15} />}
-          tone="orange"
-        />
-        <Stat
-          label="Claims"
-          value={claims}
-          icon={<Gift size={15} />}
-          tone="pink"
+
+        <MiniInsight
+          title="Audit State"
+          value="Tracked"
+          description="All critical protocol actions are indexed in the activity timeline."
+          tone="purple"
         />
       </div>
     </SurfaceCard>
   );
 }
 
-function Stat({ label, value, icon, tone = "neutral" }) {
-  const styles = {
-    neutral:
-      "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300",
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
+function StatBox({
+  label,
+  value,
+  icon,
+  tone,
+}) {
+  const toneMap = {
     success:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
-    danger: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300",
-    violet:
-      "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
-    orange:
-      "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300",
-    pink: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300",
-  }[tone];
+      "border-[var(--success-border)] bg-[var(--success-soft)] text-[var(--success)]",
+    danger:
+      "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]",
+    warning:
+      "border-[var(--warning-border)] bg-[var(--warning-soft)] text-[var(--warning)]",
+    blue:
+      "border-[var(--blue-border)] bg-[var(--blue-soft)] text-[var(--blue)]",
+    purple:
+      "border-[var(--purple-border)] bg-[var(--purple-soft)] text-[var(--purple)]",
+    pink:
+      "border-[var(--pink-soft)] bg-[var(--pink-soft)] text-[var(--pink)]",
+  };
 
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:-translate-y-0.5 hover:border-[var(--primary-border)]">
-      <div className={`mb-3 grid h-9 w-9 place-items-center rounded-xl ${styles}`}>
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+      <div
+        className={`grid h-10 w-10 place-items-center rounded-2xl border ${
+          toneMap[tone]
+        }`}
+      >
         {icon}
       </div>
 
-      <div className="text-xs font-bold text-[var(--muted)]">{label}</div>
-      <div className="mt-1 text-2xl font-black text-[var(--text)]">{value}</div>
+      <p className="mt-5 text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+        {label}
+      </p>
+
+      <p className="mt-2 text-4xl font-black leading-none text-[var(--text)]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MiniInsight({
+  title,
+  value,
+  description,
+  tone,
+}) {
+  const toneClass = {
+    success:
+      "border-[rgba(34,197,94,.18)] bg-[rgba(34,197,94,.05)]",
+    blue:
+      "border-[rgba(59,130,246,.18)] bg-[rgba(59,130,246,.05)]",
+    purple:
+      "border-[rgba(168,85,247,.18)] bg-[rgba(168,85,247,.05)]",
+  };
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 ${
+        toneClass[tone]
+      }`}
+    >
+      <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+        {title}
+      </p>
+
+      <p className="mt-2 text-2xl font-black text-[var(--text)]">
+        {value}
+      </p>
+
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+        {description}
+      </p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import TokenAmountInput from "../../components/common/TokenAmountInput";
+import Button from "../../components/common/Button";
 import {
   applySlippage,
   calculatePriceImpact,
@@ -35,8 +36,10 @@ export default function TradePanelCard({
   const [direction, setDirection] = useState(DIRECTIONS.A_TO_B);
 
   const isAToB = direction === DIRECTIONS.A_TO_B;
+
   const inputSymbol = isAToB ? SYMBOLS.tokenA : SYMBOLS.tokenB;
   const outputSymbol = isAToB ? SYMBOLS.tokenB : SYMBOLS.tokenA;
+
   const reserveInRaw = isAToB ? ammData.reserveARaw : ammData.reserveBRaw;
   const reserveOutRaw = isAToB ? ammData.reserveBRaw : ammData.reserveARaw;
 
@@ -45,7 +48,11 @@ export default function TradePanelCard({
       if (!ammData.hasLiquidity) return emptyQuote();
 
       const amountInRaw = parseToken(amount || "0");
-      const amountOutRaw = getAmountOut(amountInRaw, reserveInRaw, reserveOutRaw);
+      const amountOutRaw = getAmountOut(
+        amountInRaw,
+        reserveInRaw,
+        reserveOutRaw
+      );
       const minOutRaw = applySlippage(amountOutRaw, slippageBps);
 
       const priceImpactNumber = calculatePriceImpact({
@@ -58,7 +65,10 @@ export default function TradePanelCard({
       return {
         estimatedOut: formatQuote(amountOutRaw),
         minReceived: formatQuote(minOutRaw),
-        minReceivedRaw: String(Number(formatQuote(minOutRaw, 18, 18).replaceAll(",", "")) || 0),
+        minReceivedRaw:
+          String(
+            Number(formatQuote(minOutRaw, 18, 18).replaceAll(",", ""))
+          ) || "0",
         slippagePercent: formatBpsToPercent(slippageBps),
         priceImpact: `${priceImpactNumber.toFixed(2)}%`,
         priceImpactNumber,
@@ -86,17 +96,21 @@ export default function TradePanelCard({
   }
 
   return (
-    <SurfaceCard className="pro-card-glow flex min-h-[660px] flex-col p-5">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div>
-          <div className="pro-chip">AMM Swap</div>
-          <h2 className="mt-3 text-2xl font-black text-[var(--text)]">
-            Swap {inputSymbol}
-          </h2>
-          <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-            Price is reserve-driven. Slippage only protects minimum output.
-          </p>
-        </div>
+    <SurfaceCard
+      variant="action"
+      fill
+      className="flex min-h-[720px] flex-1 flex-col p-5"
+    >
+      <div className="mb-5">
+        <div className="dex-chip">AMM Swap</div>
+
+        <h2 className="mt-3 text-2xl font-black text-[var(--text)]">
+          Swap {inputSymbol}
+        </h2>
+
+        <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+          Price is reserve-driven. Slippage only protects minimum output.
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-1.5">
@@ -105,7 +119,7 @@ export default function TradePanelCard({
           onClick={() => setDirection(DIRECTIONS.A_TO_B)}
           className={`rounded-xl px-3 py-2.5 text-sm font-black transition ${
             isAToB
-              ? "pro-action text-white"
+              ? "bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/20"
               : "text-[var(--muted)] hover:bg-[var(--surface)]"
           }`}
         >
@@ -117,7 +131,7 @@ export default function TradePanelCard({
           onClick={() => setDirection(DIRECTIONS.B_TO_A)}
           className={`rounded-xl px-3 py-2.5 text-sm font-black transition ${
             !isAToB
-              ? "pro-action text-white"
+              ? "bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/20"
               : "text-[var(--muted)] hover:bg-[var(--surface)]"
           }`}
         >
@@ -136,7 +150,10 @@ export default function TradePanelCard({
       </div>
 
       <div className="mt-5 rounded-[24px] border border-[var(--primary-border)] bg-[var(--primary-soft)] p-5">
-        <p className="text-xs font-bold text-[var(--muted)]">Estimated output</p>
+        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+          Estimated Output
+        </p>
+
         <div className="mt-2 text-4xl font-black tracking-tight text-[var(--primary-dark)]">
           {quote.estimatedOut} {outputSymbol}
         </div>
@@ -162,6 +179,7 @@ export default function TradePanelCard({
           <label className="text-sm font-black text-[var(--text)]">
             Slippage tolerance (%)
           </label>
+
           <span className="text-xs font-bold text-[var(--muted)]">
             Current: {quote.slippagePercent}
           </span>
@@ -170,7 +188,7 @@ export default function TradePanelCard({
         <select
           value={slippageBps}
           onChange={(e) => setSlippageBps(Number(e.target.value))}
-          className="pro-input w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+          className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
         >
           {SLIPPAGE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -185,8 +203,9 @@ export default function TradePanelCard({
         </div>
       </div>
 
-      <button
-        type="button"
+      <Button
+        size="lg"
+        className="mt-auto w-full"
         onClick={handleSwap}
         disabled={
           trade?.pending ||
@@ -194,7 +213,6 @@ export default function TradePanelCard({
           !amount ||
           Number(amount) <= 0
         }
-        className="pro-action mt-auto w-full rounded-[20px] px-5 py-4 text-base font-black text-white transition disabled:cursor-not-allowed disabled:opacity-60"
       >
         {!connected
           ? "Connect Wallet"
@@ -203,7 +221,7 @@ export default function TradePanelCard({
           : !ammData.hasLiquidity
           ? "Pool is Empty"
           : `Swap ${inputSymbol}`}
-      </button>
+      </Button>
     </SurfaceCard>
   );
 }
@@ -211,9 +229,9 @@ export default function TradePanelCard({
 function InfoRow({ label, value, tone = "neutral" }) {
   const toneClass = {
     neutral: "text-[var(--text)]",
-    success: "text-emerald-500",
-    warning: "text-amber-500",
-    danger: "text-red-500",
+    success: "market-up",
+    warning: "market-warning",
+    danger: "market-down",
   }[tone];
 
   return (

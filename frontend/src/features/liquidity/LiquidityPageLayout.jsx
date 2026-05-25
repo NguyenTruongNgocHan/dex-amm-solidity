@@ -18,10 +18,15 @@ export default function LiquidityPageLayout({
     <section className="mt-6 grid gap-5 xl:grid-cols-12">
       <aside className="grid gap-5 xl:col-span-3">
         <PoolSummaryCard ammData={ammData} />
-        <PositionCard ammData={ammData} wallet={wallet} />
+
+        <PositionCard
+          ammData={ammData}
+          connected={Boolean(wallet.address)}
+          compact
+        />
       </aside>
 
-      <div className="xl:col-span-5">
+      <div className="flex xl:col-span-5">
         <AddLiquidityCard
           ammData={ammData}
           liquidity={liquidity}
@@ -32,7 +37,7 @@ export default function LiquidityPageLayout({
         />
       </div>
 
-      <div className="xl:col-span-4">
+      <div className="flex xl:col-span-4">
         <RemoveLiquidityCard
           ammData={ammData}
           liquidity={liquidity}

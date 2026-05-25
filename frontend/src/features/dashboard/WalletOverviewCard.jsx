@@ -1,52 +1,79 @@
 import { Wallet } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
-import IconBadge from "../../components/common/IconBadge";
-import { shortAddress } from "../../lib/format";
 import { SYMBOLS } from "../../config/contracts";
+import { shortAddress } from "../../lib/format";
 
 export default function WalletOverviewCard({ ammData, connected, address }) {
   return (
-    <SurfaceCard className="h-full p-5">
-      <div className="flex items-center gap-3">
-        <IconBadge tone="primary" className="h-10 w-10">
-          <Wallet size={18} />
-        </IconBadge>
-
+    <SurfaceCard variant="panel" className="flex min-h-[330px] flex-col p-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-[17px] font-bold text-[var(--text)]">
+          <div className={connected ? "dex-chip dex-chip-success" : "dex-chip dex-chip-warning"}>
+            {connected ? "Connected" : "Guest View"}
+          </div>
+
+          <h3 className="mt-3 text-xl font-black text-[var(--text)]">
             Wallet Overview
           </h3>
-          <p className="text-sm text-[var(--muted)]">
-            {connected ? shortAddress(address) : "Not connected"}
+
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            {connected
+              ? shortAddress(address)
+              : "Connect wallet to enable swap, liquidity and farming actions."}
           </p>
+        </div>
+
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--purple-soft)] text-[var(--purple)]">
+          <Wallet size={22} />
         </div>
       </div>
 
       <div className="mt-5 grid gap-3">
-        <BalanceRow
-          label={`${SYMBOLS.tokenA} Balance`}
-          value={connected ? ammData.tokenABalance : "—"}
+        <Balance
+          label={SYMBOLS.tokenA}
+          value={connected ? ammData.balanceA : "—"}
+          suffix={SYMBOLS.tokenA}
+          tone="success"
         />
-        <BalanceRow
-          label={`${SYMBOLS.tokenB} Balance`}
-          value={connected ? ammData.tokenBBalance : "—"}
+        <Balance
+          label={SYMBOLS.tokenB}
+          value={connected ? ammData.balanceB : "—"}
+          suffix={SYMBOLS.tokenB}
+          tone="blue"
         />
-        <BalanceRow
-          label={`${SYMBOLS.lpToken} Balance`}
+        <Balance
+          label={SYMBOLS.lpToken}
           value={connected ? ammData.lpBalance : "—"}
+          suffix={SYMBOLS.lpToken}
+          tone="purple"
         />
+      </div>
+
+      <div className="mt-auto pt-4">
+        <div className="surface-card-soft p-4 text-xs leading-5 text-[var(--muted)]">
+          Wallet connection is the DApp authentication layer. No password-based
+          account is required.
+        </div>
       </div>
     </SurfaceCard>
   );
 }
 
-function BalanceRow({ label, value }) {
+function Balance({ label, value, suffix, tone }) {
+  const cls = {
+    success: "market-up",
+    blue: "text-[var(--blue)]",
+    purple: "text-[var(--purple)]",
+  }[tone];
+
   return (
-    <div className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-      <span className="text-sm text-[var(--muted)]">{label}</span>
-      <span className="max-w-[150px] truncate text-right text-sm font-bold text-[var(--text)]">
-        {value}
-      </span>
+    <div className="dex-stat">
+      <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+        {label} Balance
+      </p>
+      <p className={`mt-1 truncate text-xl font-black ${cls}`}>
+        {value} <span className="text-sm">{suffix}</span>
+      </p>
     </div>
   );
 }

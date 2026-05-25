@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import TokenAmountInput from "../../components/common/TokenAmountInput";
 import Button from "../../components/common/Button";
@@ -44,22 +45,34 @@ export default function AddLiquidityCard({
   }
 
   return (
-    <SurfaceCard className="p-5">
-      <div className="mb-5">
-        <h2 className="text-lg font-black text-[var(--text)]">
-          Add Liquidity
-        </h2>
-        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-          Provide both assets to receive LP tokens. In production policy mode,
-          adding liquidity can require verified LP approval.
-        </p>
+    <SurfaceCard
+      variant="action"
+      fill
+      className="flex min-h-[650px] flex-1 flex-col p-5"
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <div className="dex-chip dex-chip-success">Mint LP</div>
+
+          <h2 className="mt-3 text-2xl font-black text-[var(--text)]">
+            Add Liquidity
+          </h2>
+
+          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+            Deposit both pool assets and receive {SYMBOLS.lpToken} ownership
+            tokens.
+          </p>
+        </div>
+
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--success-soft)] text-[var(--success)]">
+          <Plus size={22} />
+        </div>
       </div>
 
       {disabled ? (
-        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-          Adding liquidity is restricted by the current DEX policy. Your wallet
-          status is <b>{lpPolicy?.participantLabel}</b>. Submit LP evidence and
-          wait for admin approval before providing liquidity.
+        <div className="mb-5 rounded-2xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-3 text-sm leading-6 text-[var(--warning)]">
+          Verified LP required. Current wallet:{" "}
+          <b>{lpPolicy?.participantLabel || "Public Trader"}</b>.
         </div>
       ) : null}
 
@@ -79,17 +92,24 @@ export default function AddLiquidityCard({
         />
       </div>
 
-      <div className="mt-5 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 text-sm">
-        <div className="flex justify-between gap-3">
-          <span className="text-[var(--muted)]">Estimated LP minted</span>
-          <span className="font-bold text-[var(--text)]">
-            {quote.liquidityLabel} ALP
-          </span>
-        </div>
+      <div className="mt-5 rounded-[22px] border border-[var(--success-border)] bg-[var(--success-soft)] p-5">
+        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+          Estimated LP Minted
+        </p>
+
+        <p className="mt-2 text-3xl font-black market-up">
+          {quote.liquidityLabel}
+          <span className="ml-2 text-base">{SYMBOLS.lpToken}</span>
+        </p>
+      </div>
+
+      <div className="mt-4 surface-card-soft p-4 text-xs leading-5 text-[var(--muted)]">
+        LP minting follows the current pool ratio. If production policy is
+        enabled, only approved liquidity providers can add liquidity.
       </div>
 
       <Button
-        className="mt-5 w-full"
+        className="mt-auto w-full"
         size="lg"
         disabled={liquidity.pending || disabled}
         onClick={handleAddLiquidity}

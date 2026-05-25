@@ -1,60 +1,75 @@
-import { Droplets } from "lucide-react";
+import { Activity, Droplets } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
-import IconBadge from "../../components/common/IconBadge";
 import { SYMBOLS } from "../../config/contracts";
 
 export default function PoolAnalyticsCard({ ammData, loading }) {
   return (
-    <SurfaceCard className="h-full p-5">
-      <div className="flex items-center gap-3">
-        <IconBadge tone="primary" className="h-10 w-10">
-          <Droplets size={18} />
-        </IconBadge>
-
+    <SurfaceCard variant="panel" className="flex min-h-[330px] flex-col p-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-[17px] font-bold text-[var(--text)]">
-            Pool Analytics
+          <div className="dex-chip">Pool Depth</div>
+          <h3 className="mt-3 text-xl font-black text-[var(--text)]">
+            AMM Liquidity
           </h3>
-          <p className="text-sm text-[var(--muted)]">
-            {SYMBOLS.tokenA} / {SYMBOLS.tokenB}
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Reserve-backed market depth for the active pair.
           </p>
+        </div>
+
+        <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+          <Droplets size={22} />
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3">
-        <MetricRow
+      <div className="mt-5 rounded-[22px] border border-[var(--primary-border)] bg-[var(--primary-soft)] p-5">
+        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+          TVL Snapshot
+        </p>
+        <p className="mt-2 text-3xl font-black text-[var(--primary-dark)]">
+          {loading ? "Loading..." : ammData.tvlLabel}
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        <Metric
           label={`Reserve ${SYMBOLS.tokenA}`}
-          value={loading ? "..." : `${ammData.reserveA} ${SYMBOLS.tokenA}`}
+          value={`${ammData.reserveA} ${SYMBOLS.tokenA}`}
+          tone="success"
         />
-        <MetricRow
+        <Metric
           label={`Reserve ${SYMBOLS.tokenB}`}
-          value={loading ? "..." : `${ammData.reserveB} ${SYMBOLS.tokenB}`}
+          value={`${ammData.reserveB} ${SYMBOLS.tokenB}`}
+          tone="blue"
         />
-        <MetricRow
-          label="Pool Price"
-          value={`${ammData.priceAinB} ${SYMBOLS.tokenB}`}
-        />
-        <MetricRow
-          label="Status"
+        <Metric
+          label="Pool Status"
           value={ammData.hasLiquidity ? "Active" : "Empty"}
           tone={ammData.hasLiquidity ? "success" : "warning"}
+          icon={<Activity size={14} />}
         />
       </div>
     </SurfaceCard>
   );
 }
 
-function MetricRow({ label, value, tone = "neutral" }) {
+function Metric({ label, value, tone = "neutral", icon }) {
   const color = {
+    success: "market-up",
+    danger: "market-down",
+    warning: "market-warning",
+    blue: "text-[var(--blue)]",
     neutral: "text-[var(--text)]",
-    success: "text-emerald-500",
-    warning: "text-amber-500",
   }[tone];
 
   return (
-    <div className="flex items-center justify-between rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-      <span className="text-sm text-[var(--muted)]">{label}</span>
-      <span className={`max-w-[150px] truncate text-right text-sm font-bold ${color}`}>
+    <div className="dex-stat flex items-center justify-between gap-4">
+      <div className="flex min-w-0 items-center gap-2">
+        {icon ? <span className="text-[var(--muted)]">{icon}</span> : null}
+        <span className="truncate text-sm font-bold text-[var(--muted)]">
+          {label}
+        </span>
+      </div>
+      <span className={`max-w-[170px] truncate text-right text-sm font-black ${color}`}>
         {value}
       </span>
     </div>

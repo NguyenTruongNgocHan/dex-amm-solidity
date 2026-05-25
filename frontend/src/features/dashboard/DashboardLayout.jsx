@@ -7,9 +7,7 @@ import WalletOverviewCard from "./WalletOverviewCard";
 import LPPositionCard from "./LPPositionCard";
 import ActivityAnalyticsCard from "./ActivityAnalyticsCard";
 import PriceOverviewCard from "./PriceOverviewCard";
-import IPFSPanelCard from "../ipfs/IPFSPanelCard";
 import SystemActivityCard from "../activity/SystemActivityCard";
-import Button from "../../components/common/Button";
 
 export default function DashboardLayout({ wallet, amm, activity }) {
   const showStatus = wallet.status || amm.error;
@@ -20,22 +18,14 @@ export default function DashboardLayout({ wallet, amm, activity }) {
       <PageHero
         badge="AMM Command Center"
         icon={<LayoutDashboard size={14} />}
-        title="Monitor the full"
-        highlight="DEX system"
-        description="Track reserves, wallet balances, LP ownership, system activity, and IPFS evidence from one production-ready dashboard."
-        action={
-          <Button
-            variant={connected ? "secondary" : "primary"}
-            onClick={wallet.connect}
-          >
-            {connected ? "Wallet Connected" : "Connect Wallet"}
-          </Button>
-        }
+        title="Monitor the"
+        highlight="DEX market"
+        description="Track pool reserves, wallet balances, LP ownership, and system activity from one clean production dashboard."
         stats={[
           { label: "TVL Snapshot", value: amm.data.tvlLabel },
           { label: "Total LP Supply", value: amm.data.totalLiquidity },
           {
-            label: "Recent Events",
+            label: "On-chain Events",
             value: activity.allEvents?.length || activity.events?.length || 0,
           },
         ]}
@@ -62,29 +52,27 @@ export default function DashboardLayout({ wallet, amm, activity }) {
           />
         </div>
 
-        <div className="xl:col-span-8">
-          <ActivityAnalyticsCard events={activity.allEvents || activity.events} />
+        <div className="flex xl:col-span-8">
+          <ActivityAnalyticsCard
+            events={activity.allEvents || activity.events}
+          />
         </div>
 
-        <div className="xl:col-span-4 xl:row-span-2">
+        <div className="flex xl:col-span-4">
           <LPPositionCard ammData={amm.data} connected={connected} />
         </div>
 
-        <div className="xl:col-span-8">
+        <div className="xl:col-span-12">
           <SystemActivityCard
             events={activity.events}
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
             title="Recent System Activity"
-            description="A unified timeline for swaps, liquidity operations, staking, and rewards."
+            description="On-chain timeline for swaps, liquidity operations, staking, and rewards."
             scroll
             maxHeight="360px"
           />
-        </div>
-
-        <div className="xl:col-span-12">
-          <IPFSPanelCard walletAddress={wallet.address} />
         </div>
       </section>
     </PageContainer>

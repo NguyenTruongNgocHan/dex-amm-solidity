@@ -1,6 +1,7 @@
 import {
   ArrowDownUp,
   BarChart3,
+  Database,
   Droplets,
   Home,
   LayoutDashboard,
@@ -23,6 +24,7 @@ const navItems = [
   { key: "liquidity", label: "Liquidity", icon: <Droplets size={14} />, access: "public" },
   { key: "farm", label: "Farm", icon: <Sprout size={14} />, access: "connected" },
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={14} />, access: "public" },
+  { key: "evidence", label: "Evidence", icon: <Database size={14} />, access: "public" },
   { key: "access", label: "Access", icon: <UserCheck size={14} />, access: "connected" },
   { key: "admin", label: "Admin", icon: <ShieldCheck size={14} />, access: "admin" },
 ];

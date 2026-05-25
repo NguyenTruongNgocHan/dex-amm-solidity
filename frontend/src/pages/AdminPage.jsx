@@ -4,32 +4,48 @@ import {
   PauseCircle,
   PlayCircle,
   ShieldCheck,
+  Siren,
   UserCog,
 } from "lucide-react";
+
 import AppShell from "../components/layout/AppShell";
 import PageContainer from "../components/layout/PageContainer";
+import PageHero from "../components/common/PageHero";
 import SurfaceCard from "../components/common/SurfaceCard";
 import Button from "../components/common/Button";
-import PageHero from "../components/common/PageHero";
+import StatusBanner from "../components/common/StatusBanner";
+import SystemActivityCard from "../features/activity/SystemActivityCard";
+
 import useAdminControls, {
   ROLE_KEYS,
   ROLE_LABELS,
 } from "../hooks/useAdminControls";
-import { shortAddress } from "../lib/format";
+import useSystemEvents from "../hooks/useSystemEvents";
 
-export default function AdminPage({ onNavigate, wallet }) {
+export default function AdminPage({ onNavigate, wallet, activityRefreshKey }) {
   const admin = useAdminControls(wallet);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 8);
 
   const [target, setTarget] = useState("amm");
   const [roleKey, setRoleKey] = useState(ROLE_KEYS.OPERATOR);
   const [account, setAccount] = useState("");
+
   const [auditTarget, setAuditTarget] = useState("amm");
   const [auditSubject, setAuditSubject] = useState("phase-2-role-control");
   const [auditURI, setAuditURI] = useState("ipfs://demo-audit-note");
 
+  const [lpCandidate, setLpCandidate] = useState("");
+  const [lpReviewURI, setLpReviewURI] = useState("ipfs://lp-review-evidence");
+
   const canAdmin = admin.ammState?.isAdmin || admin.stakingState?.isAdmin;
-  const canOperate = admin.ammState?.isOperator || admin.stakingState?.isOperator;
-  const canAudit = admin.ammState?.isAuditor || admin.stakingState?.isAuditor;
+  const canOperate =
+    admin.ammState?.isOperator ||
+    admin.stakingState?.isOperator ||
+    canAdmin;
+  const canAudit =
+    admin.ammState?.isAuditor ||
+    admin.stakingState?.isAuditor ||
+    canAdmin;
 
   return (
     <AppShell
@@ -41,108 +57,115 @@ export default function AdminPage({ onNavigate, wallet }) {
     >
       <PageContainer>
         <PageHero
-          badge="Production Control Layer"
+          badge="Protocol Governance"
           icon={<ShieldCheck size={14} />}
-          title="Admin, Operator and"
-          highlight="Auditor governance"
-          description="Manage roles, emergency controls, token whitelist, verified liquidity provider policy, and audit evidence without touching user funds."
+          title="Manage"
+          highlight="DEX security"
+          description="Production-grade access control, protocol safety, token whitelist policy, verified LP review, and decentralized audit evidence."
           stats={[
             {
-              label: "Connected wallet",
-              value: wallet.address ? shortAddress(wallet.address) : "Not connected",
-            },
-            {
-              label: "AMM status",
-              value: admin.ammState?.paused ? "Paused" : "Active",
+              label: "Current Role",
+              value: canAdmin
+                ? "Admin"
+                : canOperate
+                ? "Operator"
+                : canAudit
+                ? "Auditor"
+                : "Viewer",
             },
             {
               label: "Trading",
               value: admin.ammState?.tradingEnabled ? "Enabled" : "Disabled",
             },
+            {
+              label: "LP Policy",
+              value: admin.ammState?.lpApprovalRequired ? "Verified" : "Open",
+            },
           ]}
         />
 
-        {admin.status ? (
-          <div className="mb-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)]">
-            {admin.status}
+        <div className="mt-4">
+          <StatusBanner message={admin.status} />
+        </div>
+
+        {!wallet.address ? (
+          <div className="mt-4">
+            <StatusBanner
+              type="warning"
+              title="Wallet required"
+              message="Connect an admin/operator/auditor wallet to manage protocol controls."
+            />
           </div>
         ) : null}
 
-        {!wallet.address ? (
-          <SurfaceCard className="p-5">
-            <div className="flex items-center gap-3 text-amber-500">
-              <AlertTriangle size={18} />
-              <span className="font-bold">Connect wallet to view role status.</span>
-            </div>
-          </SurfaceCard>
-        ) : null}
-
-        <div className="grid gap-5 lg:grid-cols-2">
-          <RoleStatusCard title="AMM Contract" state={admin.ammState} />
-          <RoleStatusCard title="Staking Rewards Contract" state={admin.stakingState} />
-        </div>
-
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <SurfaceCard className="p-5">
+        <section className="mt-6 grid gap-5 xl:grid-cols-12">
+          <SurfaceCard className="p-6 xl:col-span-6">
             <SectionTitle
-              icon={<UserCog size={18} />}
+              icon={<UserCog size={20} />}
               title="Role Management"
-              subtitle="Admin can grant or revoke roles for AMM and Staking contracts."
+              subtitle="Admin can grant or revoke roles for AMM and staking contracts."
             />
 
-            <div className="mt-5 grid gap-3">
-              <SelectField label="Target contract" value={target} onChange={setTarget}>
-                <option value="amm">AMM</option>
-                <option value="staking">Staking Rewards</option>
-              </SelectField>
-
-              <SelectField label="Role" value={roleKey} onChange={setRoleKey}>
-                <option value={ROLE_KEYS.ADMIN}>Admin</option>
-                <option value={ROLE_KEYS.OPERATOR}>Operator</option>
-                <option value={ROLE_KEYS.AUDITOR}>Auditor</option>
-              </SelectField>
-
-              <TextField
-                label="Wallet address"
-                value={account}
-                onChange={setAccount}
-                placeholder="0x..."
-              />
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Button
-                  disabled={!canAdmin || admin.loading || !account}
-                  onClick={() => admin.grantRole(target, roleKey, account)}
+            <div className="mt-6 grid gap-4">
+              <Field label="Target contract">
+                <select
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                  value={target}
+                  onChange={(event) => setTarget(event.target.value)}
                 >
-                  Grant {ROLE_LABELS[roleKey]}
-                </Button>
+                  <option value="amm">AMM</option>
+                  <option value="staking">Staking Rewards</option>
+                </select>
+              </Field>
 
-                <Button
-                  variant="secondary"
-                  disabled={!canAdmin || admin.loading || !account}
-                  onClick={() => admin.revokeRole(target, roleKey, account)}
+              <Field label="Role">
+                <select
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                  value={roleKey}
+                  onChange={(event) => setRoleKey(event.target.value)}
                 >
-                  Revoke {ROLE_LABELS[roleKey]}
-                </Button>
-              </div>
+                  <option value={ROLE_KEYS.ADMIN}>Admin</option>
+                  <option value={ROLE_KEYS.OPERATOR}>Operator</option>
+                  <option value={ROLE_KEYS.AUDITOR}>Auditor</option>
+                </select>
+              </Field>
 
-              {!canAdmin ? (
-                <p className="text-xs leading-5 text-[var(--muted)]">
-                  Current wallet is not Admin. Connect the deployer/admin wallet
-                  to manage roles.
-                </p>
-              ) : null}
+              <Field label="Wallet address">
+                <input
+                  value={account}
+                  onChange={(event) => setAccount(event.target.value)}
+                  placeholder="0x..."
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                />
+              </Field>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <Button
+                disabled={!canAdmin || admin.loading || !account}
+                onClick={() => admin.grantRole(target, roleKey, account)}
+              >
+                Grant {ROLE_LABELS[roleKey]}
+              </Button>
+
+              <Button
+                variant="secondary"
+                disabled={!canAdmin || admin.loading || !account}
+                onClick={() => admin.revokeRole(target, roleKey, account)}
+              >
+                Revoke {ROLE_LABELS[roleKey]}
+              </Button>
             </div>
           </SurfaceCard>
 
-          <SurfaceCard className="p-5">
+          <SurfaceCard className="p-6 xl:col-span-6">
             <SectionTitle
-              icon={<PauseCircle size={18} />}
+              icon={<Siren size={20} />}
               title="Emergency Control"
               subtitle="Admin pauses contracts. Operator can enable or disable AMM trading."
             />
 
-            <div className="mt-5 grid gap-4">
+            <div className="mt-6 grid gap-4">
               <ControlBlock
                 title="AMM Pause Control"
                 state={admin.ammState?.paused ? "Paused" : "Active"}
@@ -207,17 +230,21 @@ export default function AdminPage({ onNavigate, wallet }) {
             </div>
           </SurfaceCard>
 
-          <SurfaceCard className="mt-5 p-5">
+          <SurfaceCard className="p-6 xl:col-span-12">
             <SectionTitle
-              icon={<ShieldCheck size={18} />}
+              icon={<ShieldCheck size={20} />}
               title="Production Policy"
               subtitle="Operator controls token whitelist and verified LP policy. This prevents unsafe token/pool operations while keeping swaps permissionless."
             />
 
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
-              <ControlBlock
+            <div className="mt-6 grid gap-5 md:grid-cols-3">
+              <PolicyCard
                 title="Token A Whitelist"
-                state={admin.ammState?.tokenAWhitelisted ? "Whitelisted" : "Blocked"}
+                state={
+                  admin.ammState?.tokenAWhitelisted
+                    ? "Whitelisted"
+                    : "Blocked"
+                }
               >
                 <Button
                   disabled={!canOperate || admin.loading}
@@ -229,15 +256,21 @@ export default function AdminPage({ onNavigate, wallet }) {
                 <Button
                   variant="secondary"
                   disabled={!canOperate || admin.loading}
-                  onClick={() => admin.setTokenWhitelist(admin.tokenAAddress, false)}
+                  onClick={() =>
+                    admin.setTokenWhitelist(admin.tokenAAddress, false)
+                  }
                 >
                   Block Token A
                 </Button>
-              </ControlBlock>
+              </PolicyCard>
 
-              <ControlBlock
+              <PolicyCard
                 title="Token B Whitelist"
-                state={admin.ammState?.tokenBWhitelisted ? "Whitelisted" : "Blocked"}
+                state={
+                  admin.ammState?.tokenBWhitelisted
+                    ? "Whitelisted"
+                    : "Blocked"
+                }
               >
                 <Button
                   disabled={!canOperate || admin.loading}
@@ -249,19 +282,23 @@ export default function AdminPage({ onNavigate, wallet }) {
                 <Button
                   variant="secondary"
                   disabled={!canOperate || admin.loading}
-                  onClick={() => admin.setTokenWhitelist(admin.tokenBAddress, false)}
+                  onClick={() =>
+                    admin.setTokenWhitelist(admin.tokenBAddress, false)
+                  }
                 >
                   Block Token B
                 </Button>
-              </ControlBlock>
+              </PolicyCard>
 
-              <ControlBlock
+              <PolicyCard
                 title="Verified LP Policy"
                 state={admin.ammState?.lpApprovalRequired ? "Required" : "Open"}
               >
                 <Button
                   disabled={!canOperate || admin.loading}
-                  onClick={() => admin.setLiquidityProviderApprovalRequired(true)}
+                  onClick={() =>
+                    admin.setLiquidityProviderApprovalRequired(true)
+                  }
                 >
                   Require Verified LP
                 </Button>
@@ -269,166 +306,233 @@ export default function AdminPage({ onNavigate, wallet }) {
                 <Button
                   variant="secondary"
                   disabled={!canOperate || admin.loading}
-                  onClick={() => admin.setLiquidityProviderApprovalRequired(false)}
+                  onClick={() =>
+                    admin.setLiquidityProviderApprovalRequired(false)
+                  }
                 >
                   Open LP Access
                 </Button>
-              </ControlBlock>
+              </PolicyCard>
             </div>
-
-            {!canOperate ? (
-              <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-                Current wallet is not Operator. Connect an operator wallet to manage production policy.
-              </p>
-            ) : null}
           </SurfaceCard>
-        </div>
 
-        <SurfaceCard className="mt-5 p-5">
-          <SectionTitle
-            icon={<ShieldCheck size={18} />}
-            title="Auditor Evidence Note"
-            subtitle="Auditor can submit an on-chain event that references an IPFS audit note or report."
-          />
-
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
-            <SelectField
-              label="Target contract"
-              value={auditTarget}
-              onChange={setAuditTarget}
-            >
-              <option value="amm">AMM</option>
-              <option value="staking">Staking Rewards</option>
-            </SelectField>
-
-            <TextField
-              label="Audit subject"
-              value={auditSubject}
-              onChange={setAuditSubject}
-              placeholder="pool-risk-report"
+          <SurfaceCard className="p-6 xl:col-span-12">
+            <SectionTitle
+              icon={<UserCog size={20} />}
+              title="Verified Liquidity Provider Review"
+              subtitle="Admin approves or rejects LP candidates using on-chain participant status and IPFS evidence."
             />
 
-            <TextField
-              label="IPFS note URI"
-              value={auditURI}
-              onChange={setAuditURI}
-              placeholder="ipfs://..."
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
+              <Field label="Candidate wallet address">
+                <input
+                  value={lpCandidate}
+                  onChange={(event) => setLpCandidate(event.target.value)}
+                  placeholder="0x..."
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                />
+              </Field>
+
+              <Field label="Review evidence URI">
+                <input
+                  value={lpReviewURI}
+                  onChange={(event) => setLpReviewURI(event.target.value)}
+                  placeholder="ipfs://..."
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                />
+              </Field>
+
+              <Button
+                disabled={!canAdmin || admin.loading || !lpCandidate}
+                onClick={() =>
+                  admin.reviewLiquidityProvider(lpCandidate, true, lpReviewURI)
+                }
+              >
+                Approve LP
+              </Button>
+
+              <Button
+                variant="danger"
+                disabled={!canAdmin || admin.loading || !lpCandidate}
+                onClick={() =>
+                  admin.reviewLiquidityProvider(lpCandidate, false, lpReviewURI)
+                }
+              >
+                Reject LP
+              </Button>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard className="p-6 xl:col-span-12">
+            <SectionTitle
+              icon={<ShieldCheck size={20} />}
+              title="Auditor Evidence Note"
+              subtitle="Auditor can submit an on-chain event that references an IPFS audit note or report."
+            />
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+              <Field label="Target contract">
+                <select
+                  value={auditTarget}
+                  onChange={(event) => setAuditTarget(event.target.value)}
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                >
+                  <option value="amm">AMM</option>
+                  <option value="staking">Staking Rewards</option>
+                </select>
+              </Field>
+
+              <Field label="Audit subject">
+                <input
+                  value={auditSubject}
+                  onChange={(event) => setAuditSubject(event.target.value)}
+                  placeholder="pool-risk-report"
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                />
+              </Field>
+
+              <Field label="IPFS note URI">
+                <input
+                  value={auditURI}
+                  onChange={(event) => setAuditURI(event.target.value)}
+                  placeholder="ipfs://..."
+                  className="input-shell w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
+                />
+              </Field>
+
+              <Button
+                disabled={!canAudit || admin.loading || !auditURI}
+                onClick={() =>
+                  admin.submitAuditNote(auditTarget, auditSubject, auditURI)
+                }
+              >
+                Submit Audit Note
+              </Button>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard className="p-6 xl:col-span-12">
+            <SectionTitle
+              icon={<AlertTriangle size={20} />}
+              title="Security Alert Center"
+              subtitle="A compact operational overview for abnormal activity, verified liquidity access, and audit evidence."
+            />
+
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <SecurityMetric
+                label="Suspicious Swaps"
+                value="0"
+                description="Large slippage or abnormal reserve movement detected."
+                tone="danger"
+              />
+
+              <SecurityMetric
+                label="Verified LPs"
+                value={admin.ammState?.lpApprovalRequired ? "Required" : "Open"}
+                description="LP admission policy currently enforced by governance."
+                tone="success"
+              />
+
+              <SecurityMetric
+                label="Audit Notes"
+                value={canAudit ? "Enabled" : "Restricted"
+                }
+                description="Auditor role can publish IPFS-backed audit references."
+                tone="blue"
+              />
+            </div>
+          </SurfaceCard>
+
+          <div className="xl:col-span-12">
+            <SystemActivityCard
+              events={activity.events}
+              allEvents={activity.allEvents}
+              loading={activity.loading}
+              onRefresh={activity.reloadEvents}
+              title="Protocol Timeline"
+              description="Track governance actions, trading events, staking updates, and administrative activity."
+              scroll
+              maxHeight="380px"
             />
           </div>
 
-          <div className="mt-4">
-            <Button
-              disabled={!canAudit || admin.loading || !auditURI}
-              onClick={() =>
-                admin.submitAuditNote(auditTarget, auditSubject, auditURI)
-              }
-            >
-              Submit Audit Note
-            </Button>
-          </div>
-
-          {!canAudit ? (
-            <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-              Current wallet is not Auditor. Connect an auditor wallet to submit
-              audit evidence.
-            </p>
-          ) : null}
-        </SurfaceCard>
+          
+        </section>
       </PageContainer>
     </AppShell>
   );
 }
 
-function RoleStatusCard({ title, state }) {
-  return (
-    <SurfaceCard className="p-5">
-      <h2 className="text-lg font-black text-[var(--text)]">{title}</h2>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <RolePill label="Admin" active={state?.isAdmin} />
-        <RolePill label="Operator" active={state?.isOperator} />
-        <RolePill label="Auditor" active={state?.isAuditor} />
-        <RolePill label="Paused" active={state?.paused} danger />
-      </div>
-
-      {"tradingEnabled" in (state || {}) ? (
-        <div className="mt-3">
-          <RolePill label="Trading Enabled" active={state?.tradingEnabled} />
-        </div>
-      ) : null}
-    </SurfaceCard>
-  );
-}
-
-function RolePill({ label, active, danger = false }) {
-  const cls = active
-    ? danger
-      ? "bg-red-500/10 text-red-500 border-red-500/20"
-      : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-    : "bg-[var(--surface-soft)] text-[var(--muted)] border-[var(--border)]";
-
-  return (
-    <div className={`rounded-2xl border px-4 py-3 text-sm font-bold ${cls}`}>
-      {label}: {active ? "Yes" : "No"}
-    </div>
-  );
-}
-
 function SectionTitle({ icon, title, subtitle }) {
   return (
-    <div>
-      <div className="flex items-center gap-2 text-[var(--primary)]">
+    <div className="flex items-start gap-3">
+      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
         {icon}
-        <h2 className="text-lg font-black text-[var(--text)]">{title}</h2>
       </div>
-      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{subtitle}</p>
+
+      <div>
+        <h2 className="text-xl font-black text-[var(--text)]">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+          {subtitle}
+        </p>
+      </div>
     </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-black text-[var(--text)]">{label}</span>
+      <div className="mt-2">{children}</div>
+    </label>
   );
 }
 
 function ControlBlock({ title, state, children }) {
   return (
-    <div className="rounded-[18px] border border-[var(--border)] bg-[var(--surface-soft)] p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="font-bold text-[var(--text)]">{title}</div>
-        <div className="rounded-full bg-[var(--surface)] px-3 py-1 text-xs font-bold text-[var(--muted)]">
-          {state}
-        </div>
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-base font-black text-[var(--text)]">{title}</h3>
+        <span className="dex-chip">{state}</span>
       </div>
-      <div className="flex flex-wrap gap-3">{children}</div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">{children}</div>
     </div>
   );
 }
 
-function TextField({ label, value, onChange, placeholder }) {
+function PolicyCard({ title, state, children }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-bold text-[var(--text)]">
-        {label}
-      </span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none"
-      />
-    </label>
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="max-w-[170px] text-lg font-black text-[var(--text)]">
+          {title}
+        </h3>
+        <span className="dex-chip">{state}</span>
+      </div>
+
+      <div className="mt-5 grid gap-3">{children}</div>
+    </div>
   );
 }
 
-function SelectField({ label, value, onChange, children }) {
+function SecurityMetric({ label, value, description, tone }) {
+  const cls = {
+    danger:
+      "border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)]",
+    success:
+      "border-[var(--success-border)] bg-[var(--success-soft)] text-[var(--success)]",
+    blue: "border-[var(--blue-border)] bg-[var(--blue-soft)] text-[var(--blue)]",
+  }[tone];
+
   return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-bold text-[var(--text)]">
-        {label}
-      </span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] outline-none"
-      >
-        {children}
-      </select>
-    </label>
+    <div className={`rounded-3xl border p-5 ${cls}`}>
+      <p className="text-xs font-black uppercase tracking-wide">{label}</p>
+      <p className="mt-3 text-3xl font-black text-[var(--text)]">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+        {description}
+      </p>
+    </div>
   );
 }

@@ -1,80 +1,69 @@
+import { Link2 } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import { SYMBOLS } from "../../config/contracts";
 
 export default function PositionCard({ ammData, connected, compact = false }) {
-  const empty = !connected;
-
-  const withdrawableA =
-    ammData.withdrawableA ?? ammData.withdrawableTokenA ?? "0";
-
-  const withdrawableB =
-    ammData.withdrawableB ?? ammData.withdrawableTokenB ?? "0";
+  const withdrawableA = ammData.withdrawableA ?? ammData.withdrawableTokenA ?? "0";
+  const withdrawableB = ammData.withdrawableB ?? ammData.withdrawableTokenB ?? "0";
 
   return (
-    <SurfaceCard className="flex h-full flex-col p-5">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
-          🔗
+    <SurfaceCard variant="panel" className="flex min-h-[300px] flex-col p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="dex-chip">Position</div>
+          <h3 className="mt-3 text-lg font-black text-[var(--text)]">
+            Your LP Share
+          </h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Ownership and claimable reserves
+          </p>
         </div>
 
-        <div>
-          <h3 className="text-lg font-bold text-[var(--text)]">
-            Your Position
-          </h3>
-          <p className="text-sm text-[var(--muted)]">
-            Pool ownership and withdrawable tokens
-          </p>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--purple-soft)] text-[var(--purple)]">
+          <Link2 size={20} />
         </div>
       </div>
 
-      <div className="rounded-[20px] border border-[var(--primary)]/30 bg-[var(--primary)]/10 p-4">
-        <p className="text-sm text-[var(--muted)]">Your Pool Share</p>
-        <p className="mt-2 text-4xl font-black text-[var(--primary)]">
-          {empty ? "—" : `${ammData.lpSharePercent}%`}
+      <div className="mt-5 rounded-[22px] border border-[var(--primary-border)] bg-[var(--primary-soft)] p-4">
+        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+          Pool Share
+        </p>
+        <p className="mt-2 text-3xl font-black text-[var(--primary-dark)]">
+          {connected ? `${ammData.lpSharePercent}%` : "—"}
         </p>
       </div>
 
-      <div className={`mt-4 grid gap-2 ${compact ? "text-sm" : ""}`}>
+      <div className={`mt-4 grid gap-3 ${compact ? "text-sm" : ""}`}>
         <InfoRow
-          label={`${SYMBOLS.lpToken} Balance`}
-          value={empty ? "—" : `${ammData.lpBalance} ${SYMBOLS.lpToken}`}
+          label={`${SYMBOLS.lpToken}`}
+          value={connected ? `${ammData.lpBalance} ${SYMBOLS.lpToken}` : "—"}
         />
         <InfoRow
-          label="Total LP Supply"
-          value={empty ? "—" : `${ammData.totalLiquidity} ${SYMBOLS.lpToken}`}
+          label={SYMBOLS.tokenA}
+          value={connected ? `${withdrawableA} ${SYMBOLS.tokenA}` : "—"}
+          tone="success"
         />
         <InfoRow
-          label={`Withdrawable ${SYMBOLS.tokenA}`}
-          value={empty ? "—" : `${withdrawableA} ${SYMBOLS.tokenA}`}
-          highlight
+          label={SYMBOLS.tokenB}
+          value={connected ? `${withdrawableB} ${SYMBOLS.tokenB}` : "—"}
+          tone="blue"
         />
-        <InfoRow
-          label={`Withdrawable ${SYMBOLS.tokenB}`}
-          value={empty ? "—" : `${withdrawableB} ${SYMBOLS.tokenB}`}
-          highlight
-        />
-      </div>
-
-      <div className="mt-auto pt-4">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 text-xs leading-5 text-[var(--muted)]">
-          Your {SYMBOLS.lpToken} represents your share of the pool. Removing
-          liquidity burns LP tokens and returns {SYMBOLS.tokenA}/
-          {SYMBOLS.tokenB} based on the current reserve ratio.
-        </div>
       </div>
     </SurfaceCard>
   );
 }
 
-function InfoRow({ label, value, highlight = false }) {
+function InfoRow({ label, value, tone = "neutral" }) {
+  const cls = {
+    success: "market-up",
+    blue: "text-[var(--blue)]",
+    neutral: "text-[var(--text)]",
+  }[tone];
+
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-      <span className="text-[var(--muted)]">{label}</span>
-      <span
-        className={`max-w-[170px] truncate text-right font-bold ${
-          highlight ? "text-[var(--primary)]" : "text-[var(--text)]"
-        }`}
-      >
+    <div className="dex-stat flex items-center justify-between gap-3">
+      <span className="truncate text-sm font-bold text-[var(--muted)]">{label}</span>
+      <span className={`max-w-[140px] truncate text-right text-sm font-black ${cls}`}>
         {value}
       </span>
     </div>

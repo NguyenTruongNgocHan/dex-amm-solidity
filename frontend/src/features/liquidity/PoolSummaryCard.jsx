@@ -1,34 +1,36 @@
+import { Droplets } from "lucide-react";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import { SYMBOLS } from "../../config/contracts";
 
 export default function PoolSummaryCard({ ammData }) {
   return (
-    <SurfaceCard className="p-5">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--primary)] text-white shadow-lg shadow-cyan-500/20">
-          💧
+    <SurfaceCard variant="panel" className="flex min-h-[300px] flex-col p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="dex-chip">Pool</div>
+          <h3 className="mt-3 text-lg font-black text-[var(--text)]">
+            {SYMBOLS.tokenA}/{SYMBOLS.tokenB}
+          </h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            AMM reserve state
+          </p>
         </div>
 
-        <div>
-          <h3 className="text-lg font-bold text-[var(--text)]">Pool Summary</h3>
-          <p className="text-sm text-[var(--muted)]">
-            {SYMBOLS.tokenA} / {SYMBOLS.tokenB} AMM pool
-          </p>
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary-dark)]">
+          <Droplets size={20} />
         </div>
       </div>
 
-      <div className="grid gap-2">
+      <div className="mt-5 grid gap-3">
         <InfoRow
           label={`Reserve ${SYMBOLS.tokenA}`}
           value={`${ammData.reserveA} ${SYMBOLS.tokenA}`}
+          tone="success"
         />
         <InfoRow
           label={`Reserve ${SYMBOLS.tokenB}`}
           value={`${ammData.reserveB} ${SYMBOLS.tokenB}`}
-        />
-        <InfoRow
-          label={`Price ${SYMBOLS.tokenA} → ${SYMBOLS.tokenB}`}
-          value={`${ammData.priceAinB} ${SYMBOLS.tokenB}`}
+          tone="blue"
         />
         <InfoRow
           label="Status"
@@ -41,17 +43,19 @@ export default function PoolSummaryCard({ ammData }) {
 }
 
 function InfoRow({ label, value, tone = "neutral" }) {
-  const toneClass =
-    tone === "success"
-      ? "text-emerald-400"
-      : tone === "warning"
-      ? "text-amber-400"
-      : "text-[var(--text)]";
+  const cls = {
+    success: "market-up",
+    blue: "text-[var(--blue)]",
+    warning: "market-warning",
+    neutral: "text-[var(--text)]",
+  }[tone];
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm">
-      <span className="text-[var(--muted)]">{label}</span>
-      <span className={`max-w-[170px] truncate text-right font-bold ${toneClass}`}>
+    <div className="dex-stat flex items-center justify-between gap-3">
+      <span className="truncate text-sm font-bold text-[var(--muted)]">
+        {label}
+      </span>
+      <span className={`max-w-[140px] truncate text-right text-sm font-black ${cls}`}>
         {value}
       </span>
     </div>
