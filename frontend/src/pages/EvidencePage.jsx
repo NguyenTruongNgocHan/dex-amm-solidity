@@ -22,13 +22,13 @@ export default function EvidencePage({ onNavigate, wallet }) {
           description="Inspect trade receipts, governance proposals, token metadata, and IPFS-backed audit records in one forensic evidence center."
           stats={[
             { label: "Evidence Type", value: "Receipts / Metadata / Proposals" },
-            { label: "Storage Layer", value: "IPFS / Local Gateway" },
-            { label: "Audit Mode", value: "Exportable JSON" },
+            { label: "Storage Layer", value: "IPFS + On-chain Hash" },
+            { label: "Audit Mode", value: "Verify / Compare / Export" },
           ]}
         />
 
         <section className="mt-6">
-          <IPFSPanelCard walletAddress={wallet.address} />
+          <IPFSPanelCard wallet={wallet} />
         </section>
       </PageContainer>
     </AppShell>
