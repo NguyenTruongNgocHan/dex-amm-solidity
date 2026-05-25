@@ -9,6 +9,7 @@ export default function HomePage({ onNavigate, wallet }) {
       onNavigate={onNavigate}
       walletAddress={wallet.address}
       onConnect={wallet.connect}
+      wallet={wallet}
     >
       <main className="mx-auto max-w-7xl px-6 py-8">
         <HeroSection onNavigate={onNavigate} />

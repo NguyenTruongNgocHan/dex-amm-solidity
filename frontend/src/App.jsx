@@ -5,6 +5,7 @@ import LiquidityPage from "./pages/LiquidityPage";
 import DashboardPage from "./pages/DashboardPage";
 import FarmPage from "./pages/FarmPage";
 import AdminPage from "./pages/AdminPage";
+import AccessRequestPage from "./pages/AccessRequestPage";
 import useWallet from "./hooks/useWallet";
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
   if (page === "farm") return <FarmPage {...commonProps} />;
   if (page === "dashboard") return <DashboardPage {...commonProps} />;
   if (page === "admin") return <AdminPage {...commonProps} />;
+  if (page === "access") return <AccessRequestPage {...commonProps} />;
 
   return <HomePage {...commonProps} />;
 }

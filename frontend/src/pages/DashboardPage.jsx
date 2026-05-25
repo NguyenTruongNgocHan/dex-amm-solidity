@@ -17,6 +17,7 @@ export default function DashboardPage({
       onNavigate={onNavigate}
       walletAddress={wallet.address}
       onConnect={wallet.connect}
+      wallet={wallet}
     >
       <DashboardLayout wallet={wallet} amm={amm} activity={activity} />
     </AppShell>

@@ -4,18 +4,20 @@ export default function AppShell({
   children,
   currentPage,
   onNavigate,
-  walletAddress,
+  walletAddress = "",
   onConnect,
+  wallet = null,
 }) {
   return (
-    <div className="app-shell">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
       <Navbar
         currentPage={currentPage}
         onNavigate={onNavigate}
         walletAddress={walletAddress}
         onConnect={onConnect}
+        wallet={wallet}
       />
-      <div className="relative z-10">{children}</div>
+      {children}
     </div>
   );
 }

@@ -29,6 +29,7 @@ export default function TradePage({
       onNavigate={onNavigate}
       walletAddress={wallet.address}
       onConnect={wallet.connect}
+      wallet={wallet}
     >
       <TradePageLayout
         wallet={wallet}

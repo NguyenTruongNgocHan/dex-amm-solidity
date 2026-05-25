@@ -4,6 +4,7 @@ import {
   Droplets,
   Home,
   LayoutDashboard,
+  Lock,
   Moon,
   ShieldCheck,
   Sprout,
@@ -13,14 +14,51 @@ import {
 import Button from "../common/Button";
 import useTheme from "../../hooks/useTheme";
 import { shortAddress } from "../../lib/format";
+import useAccessProfile from "../../hooks/useAccessProfile";
 
 const navItems = [
-  { key: "home", label: "Home", icon: <Home size={15} /> },
-  { key: "trade", label: "Trade", icon: <ArrowDownUp size={15} /> },
-  { key: "liquidity", label: "Liquidity", icon: <Droplets size={15} /> },
-  { key: "farm", label: "Farm", icon: <Sprout size={15} /> },
-  { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} /> },
-  { key: "admin", label: "Admin", icon: <ShieldCheck size={15} /> },
+  {
+    key: "home",
+    label: "Home",
+    icon: <Home size={15} />,
+    access: "public",
+  },
+  {
+    key: "trade",
+    label: "Trade",
+    icon: <ArrowDownUp size={15} />,
+    access: "public",
+  },
+  {
+    key: "liquidity",
+    label: "Liquidity",
+    icon: <Droplets size={15} />,
+    access: "liquidity",
+  },
+  {
+    key: "farm",
+    label: "Farm",
+    icon: <Sprout size={15} />,
+    access: "connected",
+  },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    icon: <LayoutDashboard size={15} />,
+    access: "connected",
+  },
+  {
+    key: "access",
+    label: "Access",
+    icon: <ShieldCheck size={15} />,
+    access: "connected",
+  },
+  {
+    key: "admin",
+    label: "Admin",
+    icon: <ShieldCheck size={15} />,
+    access: "admin",
+  },
 ];
 
 export default function Navbar({
@@ -28,26 +66,56 @@ export default function Navbar({
   onNavigate,
   walletAddress,
   onConnect,
+  wallet,
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useAccessProfile(wallet);
 
-  const navItem = ({ key, label, icon }) => {
-    const active = currentPage === key;
+  function canAccess(item) {
+    if (item.access === "public") return true;
+    if (item.access === "connected") return Boolean(walletAddress);
+    if (item.access === "liquidity") return Boolean(walletAddress);
+    if (item.access === "admin") return profile.canViewAdmin;
+
+    return false;
+  }
+
+  function getAccessHint(item) {
+    if (item.access === "public") return "Public";
+    if (item.access === "connected") return "Connect wallet required";
+    if (item.access === "liquidity") {
+      return profile.isLpApprovalRequired
+        ? "Verified LP required to add liquidity"
+        : "Wallet required";
+    }
+    if (item.access === "admin") return "Admin / Operator / Auditor only";
+
+    return "";
+  }
+
+  const navItem = (item) => {
+    const active = currentPage === item.key;
+    const allowed = canAccess(item);
 
     return (
       <button
-        key={key}
-        onClick={() => onNavigate?.(key)}
-        className={`group inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-bold transition duration-200 ${
-          active
+        key={item.key}
+        title={getAccessHint(item)}
+        disabled={!allowed}
+        onClick={() => {
+          if (allowed) onNavigate?.(item.key);
+        }}
+        className={`group inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-bold transition duration-200 ${active
             ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15 dark:bg-white dark:text-slate-950"
-            : "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
-        }`}
+            : allowed
+              ? "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
+              : "cursor-not-allowed text-[var(--muted)] opacity-40"
+          }`}
       >
         <span className={active ? "text-current" : "text-[var(--primary)]"}>
-          {icon}
+          {allowed ? item.icon : <Lock size={15} />}
         </span>
-        {label}
+        {item.label}
       </button>
     );
   };
@@ -68,7 +136,7 @@ export default function Navbar({
               DEXCK
             </div>
             <div className="text-xs font-semibold text-[var(--muted)]">
-              AMM · Swap · Farm
+              AMM · Access Control · Audit-ready
             </div>
           </div>
         </button>
@@ -78,6 +146,18 @@ export default function Navbar({
         </div>
 
         <div className="flex items-center gap-3">
+          {walletAddress ? (
+            <div className="hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-xs font-bold text-[var(--text)] lg:block">
+              {profile.isAdmin
+                ? "Admin"
+                : profile.isOperator
+                  ? "Operator"
+                  : profile.isAuditor
+                    ? "Auditor"
+                    : profile.participantLabel}
+            </div>
+          ) : null}
+
           <button
             onClick={toggleTheme}
             className="grid h-11 w-11 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] transition hover:-translate-y-0.5 hover:border-[var(--primary-border)] hover:text-[var(--primary-dark)]"

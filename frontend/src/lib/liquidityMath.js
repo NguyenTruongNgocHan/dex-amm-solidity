@@ -55,6 +55,40 @@ export function calculateLiquidityPreview(
   }
 }
 
+export function quoteLiquidity({
+  amountA,
+  amountB,
+  reserveARaw,
+  reserveBRaw,
+  totalLiquidityRaw,
+}) {
+  const liquidityLabel = calculateLiquidityPreview(
+    amountA,
+    amountB,
+    reserveARaw,
+    reserveBRaw,
+    totalLiquidityRaw
+  );
+
+  let minLiquidity = "0";
+
+  try {
+    const liquidityRaw = parseToken(liquidityLabel || "0");
+
+    // 0.5% protection for LP mint amount
+    const minLiquidityRaw = (liquidityRaw * 995n) / 1000n;
+
+    minLiquidity = formatToken(minLiquidityRaw, 18, 18).replaceAll(",", "");
+  } catch {
+    minLiquidity = "0";
+  }
+
+  return {
+    liquidityLabel,
+    minLiquidity,
+  };
+}
+
 export function calculateRemoveLiquidityPreview(
   lpAmount,
   reserveARaw,
@@ -67,7 +101,12 @@ export function calculateRemoveLiquidityPreview(
     const reserveB = BigInt(reserveBRaw || 0n);
     const totalLiquidity = BigInt(totalLiquidityRaw || 0n);
 
-    if (lpRaw <= 0n || reserveA <= 0n || reserveB <= 0n || totalLiquidity <= 0n) {
+    if (
+      lpRaw <= 0n ||
+      reserveA <= 0n ||
+      reserveB <= 0n ||
+      totalLiquidity <= 0n
+    ) {
       return {
         amountA: 0n,
         amountB: 0n,

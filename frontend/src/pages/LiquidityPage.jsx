@@ -1,8 +1,10 @@
 import AppShell from "../components/layout/AppShell";
+import PageContainer from "../components/layout/PageContainer";
+import StatusBanner from "../components/common/StatusBanner";
+import LiquidityPageLayout from "../features/liquidity/LiquidityPageLayout";
 import useAMMData from "../hooks/useAMMData";
 import useLiquidityActions from "../hooks/useLiquidityActions";
-import useSystemEvents from "../hooks/useSystemEvents";
-import LiquidityPageLayout from "../features/liquidity/LiquidityPageLayout";
+import useAccessProfile from "../hooks/useAccessProfile";
 
 export default function LiquidityPage({
   onNavigate,
@@ -10,18 +12,18 @@ export default function LiquidityPage({
   activityRefreshKey,
   refreshActivity,
 }) {
-  const amm = useAMMData(wallet.provider, wallet.address);
-  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 8);
+  const amm = useAMMData(wallet.provider, wallet.address, activityRefreshKey);
 
   const liquidity = useLiquidityActions(
     wallet.signer,
     async () => {
       await amm.reload();
-      await activity.reloadEvents();
       refreshActivity?.();
     },
     wallet.setStatus
   );
+
+  const { profile } = useAccessProfile(wallet);
 
   return (
     <AppShell
@@ -29,13 +31,25 @@ export default function LiquidityPage({
       onNavigate={onNavigate}
       walletAddress={wallet.address}
       onConnect={wallet.connect}
+      wallet={wallet}
     >
-      <LiquidityPageLayout
-        wallet={wallet}
-        amm={amm}
-        liquidity={liquidity}
-        activity={activity}
-      />
+      <PageContainer>
+        {profile.isLpApprovalRequired && !profile.canAddLiquidity ? (
+          <StatusBanner
+            type="warning"
+            title="Verified Liquidity Provider required"
+            message="This DEX is running in production policy mode. You can still trade, but adding liquidity requires admin approval with evidence stored through an IPFS URI."
+          />
+        ) : null}
+
+        <LiquidityPageLayout
+          ammData={amm.data}
+          liquidity={liquidity}
+          wallet={wallet}
+          canAddLiquidity={profile.canAddLiquidity}
+          lpPolicy={profile}
+        />
+      </PageContainer>
     </AppShell>
   );
 }

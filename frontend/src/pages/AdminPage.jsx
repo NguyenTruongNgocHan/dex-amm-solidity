@@ -36,6 +36,7 @@ export default function AdminPage({ onNavigate, wallet }) {
       onNavigate={onNavigate}
       walletAddress={wallet.address}
       onConnect={wallet.connect}
+      wallet={wallet}
     >
       <PageContainer>
         <div className="mb-6 rounded-[28px] bg-gradient-to-br from-slate-950 to-slate-800 p-7 text-white shadow-xl shadow-slate-950/20">
