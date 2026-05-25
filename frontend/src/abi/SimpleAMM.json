@@ -92,6 +92,49 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "evidenceType",
+        "type": "uint8"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "contentHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "evidenceURI",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "submitter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "submittedAt",
+        "type": "uint256"
+      }
+    ],
+    "name": "EvidenceAnchored",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
         "name": "provider",
         "type": "address"
@@ -434,6 +477,58 @@
   },
   {
     "inputs": [],
+    "name": "EVIDENCE_GOVERNANCE_PROPOSAL",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "EVIDENCE_LIQUIDITY_RECEIPT",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "EVIDENCE_POOL_AUDIT_REPORT",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "EVIDENCE_TRADE_RECEIPT",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "FEE_DENOMINATOR",
     "outputs": [
       {
@@ -612,6 +707,45 @@
       {
         "internalType": "uint256",
         "name": "amountOut",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getEvidence",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "evidenceType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "contentHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "evidenceURI",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "submitter",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "submittedAt",
         "type": "uint256"
       }
     ],
@@ -1190,6 +1324,34 @@
       }
     ],
     "name": "submitAuditNote",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "subject",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint8",
+        "name": "evidenceType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "contentHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "evidenceURI",
+        "type": "string"
+      }
+    ],
+    "name": "submitEvidence",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

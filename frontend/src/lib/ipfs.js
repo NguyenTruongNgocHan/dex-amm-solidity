@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { HARDHAT_CHAIN_ID, SYMBOLS } from "../config/contracts";
 import { createWalletHash } from "./privacy";
 
@@ -20,6 +21,39 @@ function writeLocalCache(cache) {
 
 function createLocalCid() {
   return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+export function canonicalStringify(value) {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => canonicalStringify(item)).join(",")}]`;
+  }
+
+  return `{${Object.keys(value)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${canonicalStringify(value[key])}`)
+    .join(",")}}`;
+}
+
+export function hashJsonContent(content) {
+  return ethers.keccak256(ethers.toUtf8Bytes(canonicalStringify(content)));
+}
+
+export function subjectFromTxHash(txHash) {
+  if (!txHash || !ethers.isHexString(txHash, 32)) {
+    throw new Error("Invalid transaction hash for evidence subject.");
+  }
+
+  return txHash;
+}
+
+export function evidenceURIFromCid(cid) {
+  if (!cid) return "";
+  if (cid.startsWith("local-")) return `local://${cid}`;
+  return `ipfs://${cid}`;
 }
 
 export function getGatewayUrl(cid) {
@@ -182,7 +216,7 @@ export function createTradeReceipt({
   priceImpact,
   fee,
 }) {
-  return {
+  const baseReceipt = {
     type: "trade-receipt",
     project: "DEXCK AMM",
     chainId: HARDHAT_CHAIN_ID,
@@ -202,6 +236,11 @@ export function createTradeReceipt({
     createdAt: new Date().toISOString(),
     privacyNote:
       "Raw wallet address is intentionally not stored in IPFS receipt. On-chain address remains public by Ethereum design; off-chain evidence stores only walletHash.",
+  };
+
+  return {
+    ...baseReceipt,
+    receiptHash: hashJsonContent(baseReceipt),
   };
 }
 

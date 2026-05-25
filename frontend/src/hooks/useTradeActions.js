@@ -4,7 +4,10 @@ import { CONTRACTS, SYMBOLS } from "../config/contracts";
 import { parseToken, formatToken } from "../lib/format";
 import {
   createTradeReceipt,
+  evidenceURIFromCid,
+  hashJsonContent,
   saveTradeReceipt,
+  subjectFromTxHash,
   uploadJsonToIPFS,
 } from "../lib/ipfs";
 
@@ -33,36 +36,53 @@ function calculateFee(amountIn) {
 export default function useTradeActions(signer, reload, setStatus) {
   const [pending, setPending] = useState(false);
 
-  async function uploadReceiptSafely(receipt) {
+  async function uploadAndAnchorReceipt(amm, receipt) {
+    const upload = await uploadJsonToIPFS(
+      receipt,
+      `trade-receipt-${receipt.txHash}.json`
+    );
+
+    const evidenceURI = evidenceURIFromCid(upload.cid);
+    const subject = subjectFromTxHash(receipt.txHash);
+    const contentHash = receipt.receiptHash || hashJsonContent(receipt);
+
+    let anchorTxHash = "";
+    let anchorStatus = "not-anchored";
+
     try {
-      const upload = await uploadJsonToIPFS(
-        receipt,
-        `trade-receipt-${receipt.txHash}.json`
+      setStatus?.("Anchoring receipt hash on-chain...");
+
+      const anchorTx = await amm.submitEvidence(
+        subject,
+        1,
+        contentHash,
+        evidenceURI
       );
 
-      const savedReceipt = {
-        ...receipt,
-        cid: upload.cid,
-        ipfsUrl: upload.url,
-        ipfsMode: upload.mode,
-      };
+      await anchorTx.wait();
 
-      saveTradeReceipt(savedReceipt);
-      return savedReceipt;
+      anchorTxHash = anchorTx.hash;
+      anchorStatus = "anchored";
     } catch (error) {
-      console.error("Receipt upload failed:", error);
-
-      const savedReceipt = {
-        ...receipt,
-        cid: "",
-        ipfsUrl: "",
-        ipfsMode: "failed",
-        ipfsError: error.message,
-      };
-
-      saveTradeReceipt(savedReceipt);
-      return savedReceipt;
+      console.error("Evidence anchoring failed:", error);
+      anchorStatus = "anchor-failed";
     }
+
+    const savedReceipt = {
+      ...receipt,
+      cid: upload.cid,
+      ipfsUrl: upload.url,
+      ipfsMode: upload.mode,
+      evidenceURI,
+      evidenceSubject: subject,
+      evidenceContentHash: contentHash,
+      anchorTxHash,
+      anchorStatus,
+    };
+
+    saveTradeReceipt(savedReceipt);
+
+    return savedReceipt;
   }
 
   async function swapTokenAForTokenB(amountIn, minAmountOut = "0") {
@@ -133,9 +153,14 @@ export default function useTradeActions(signer, reload, setStatus) {
         fee: `${calculateFee(amountIn)} ${SYMBOLS.tokenA}`,
       });
 
-      await uploadReceiptSafely(tradeReceipt);
+      const savedReceipt = await uploadAndAnchorReceipt(amm, tradeReceipt);
 
-      setStatus?.("Swap successful. Privacy-safe receipt saved.");
+      setStatus?.(
+        savedReceipt.anchorStatus === "anchored"
+          ? "Swap successful. Receipt uploaded and anchored on-chain."
+          : "Swap successful. Receipt saved, but on-chain anchor failed."
+      );
+
       await reload?.();
     } catch (error) {
       console.error(error);
@@ -213,9 +238,14 @@ export default function useTradeActions(signer, reload, setStatus) {
         fee: `${calculateFee(amountIn)} ${SYMBOLS.tokenB}`,
       });
 
-      await uploadReceiptSafely(tradeReceipt);
+      const savedReceipt = await uploadAndAnchorReceipt(amm, tradeReceipt);
 
-      setStatus?.("Swap successful. Privacy-safe receipt saved.");
+      setStatus?.(
+        savedReceipt.anchorStatus === "anchored"
+          ? "Swap successful. Receipt uploaded and anchored on-chain."
+          : "Swap successful. Receipt saved, but on-chain anchor failed."
+      );
+
       await reload?.();
     } catch (error) {
       console.error(error);

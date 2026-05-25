@@ -19,6 +19,11 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
     uint8 public constant PARTICIPANT_APPROVED = 2;
     uint8 public constant PARTICIPANT_REJECTED = 3;
 
+    uint8 public constant EVIDENCE_TRADE_RECEIPT = 1;
+    uint8 public constant EVIDENCE_LIQUIDITY_RECEIPT = 2;
+    uint8 public constant EVIDENCE_POOL_AUDIT_REPORT = 3;
+    uint8 public constant EVIDENCE_GOVERNANCE_PROPOSAL = 4;
+
     uint256 public constant FEE_NUMERATOR = 997;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public constant PRICE_PRECISION = 1e18;
@@ -45,7 +50,16 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         address reviewer;
     }
 
+    struct EvidenceRecord {
+        uint8 evidenceType;
+        bytes32 contentHash;
+        string evidenceURI;
+        address submitter;
+        uint256 submittedAt;
+    }
+
     mapping(address => ParticipantProfile) private participantProfiles;
+    mapping(bytes32 => EvidenceRecord) private evidenceRecords;
 
     event LiquidityAdded(
         address indexed provider,
@@ -99,6 +113,15 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         address indexed auditor,
         bytes32 indexed subject,
         string noteURI
+    );
+
+    event EvidenceAnchored(
+        bytes32 indexed subject,
+        uint8 indexed evidenceType,
+        bytes32 indexed contentHash,
+        string evidenceURI,
+        address submitter,
+        uint256 submittedAt
     );
 
     constructor(address _tokenA, address _tokenB) {
@@ -245,6 +268,60 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         require(bytes(noteURI).length > 0, "Invalid note URI");
 
         emit AuditNoteSubmitted(msg.sender, subject, noteURI);
+    }
+
+    function submitEvidence(
+        bytes32 subject,
+        uint8 evidenceType,
+        bytes32 contentHash,
+        string calldata evidenceURI
+    ) external whenNotPaused {
+        require(subject != bytes32(0), "Invalid subject");
+        require(contentHash != bytes32(0), "Invalid content hash");
+        require(bytes(evidenceURI).length > 0, "Invalid evidence URI");
+        require(evidenceType >= 1 && evidenceType <= 4, "Invalid evidence type");
+        require(evidenceRecords[subject].submittedAt == 0, "Evidence exists");
+
+        evidenceRecords[subject] = EvidenceRecord({
+            evidenceType: evidenceType,
+            contentHash: contentHash,
+            evidenceURI: evidenceURI,
+            submitter: msg.sender,
+            submittedAt: block.timestamp
+        });
+
+        emit EvidenceAnchored(
+            subject,
+            evidenceType,
+            contentHash,
+            evidenceURI,
+            msg.sender,
+            block.timestamp
+        );
+    }
+
+    function getEvidence(
+        bytes32 subject
+    )
+        external
+        view
+        returns (
+            uint8 evidenceType,
+            bytes32 contentHash,
+            string memory evidenceURI,
+            address submitter,
+            uint256 submittedAt
+        )
+    {
+        EvidenceRecord memory record = evidenceRecords[subject];
+
+        return (
+            record.evidenceType,
+            record.contentHash,
+            record.evidenceURI,
+            record.submitter,
+            record.submittedAt
+        );
     }
 
     function getParticipantProfile(
@@ -606,65 +683,56 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         require(amountIn > 0, "Invalid input");
         require(reserveA > 0 && reserveB > 0, "Empty pool");
 
+        bool isAtoB = tokenIn == address(tokenA);
+        require(isAtoB || tokenIn == address(tokenB), "Unsupported token");
+
+        IERC20 inputToken = isAtoB ? tokenA : tokenB;
+        IERC20 outputToken = isAtoB ? tokenB : tokenA;
+
+        uint256 reserveIn = isAtoB ? reserveA : reserveB;
+        uint256 reserveOut = isAtoB ? reserveB : reserveA;
+
         amountOut = getAmountOut(tokenIn, amountIn);
 
-        require(amountOut > 0, "Zero output");
         require(amountOut >= minAmountOut, "Slippage too high");
+        require(amountOut < reserveOut, "Insufficient liquidity");
 
-        if (tokenIn == address(tokenA)) {
-            require(amountOut < reserveB, "Not enough liquidity");
+        inputToken.safeTransferFrom(msg.sender, address(this), amountIn);
+        outputToken.safeTransfer(msg.sender, amountOut);
 
-            tokenA.safeTransferFrom(msg.sender, address(this), amountIn);
+        reserveIn += amountIn;
+        reserveOut -= amountOut;
 
-            reserveA += amountIn;
-            reserveB -= amountOut;
-
-            tokenB.safeTransfer(msg.sender, amountOut);
-
-            emit Swapped(
-                msg.sender,
-                address(tokenA),
-                amountIn,
-                address(tokenB),
-                amountOut
-            );
-        } else if (tokenIn == address(tokenB)) {
-            require(amountOut < reserveA, "Not enough liquidity");
-
-            tokenB.safeTransferFrom(msg.sender, address(this), amountIn);
-
-            reserveB += amountIn;
-            reserveA -= amountOut;
-
-            tokenA.safeTransfer(msg.sender, amountOut);
-
-            emit Swapped(
-                msg.sender,
-                address(tokenB),
-                amountIn,
-                address(tokenA),
-                amountOut
-            );
+        if (isAtoB) {
+            reserveA = reserveIn;
+            reserveB = reserveOut;
         } else {
-            revert("Unsupported token");
+            reserveB = reserveIn;
+            reserveA = reserveOut;
+        }
+
+        emit Swapped(
+            msg.sender,
+            tokenIn,
+            amountIn,
+            address(outputToken),
+            amountOut
+        );
+    }
+
+    function _sqrt(uint256 x) private pure returns (uint256 y) {
+        if (x == 0) return 0;
+
+        uint256 z = (x + 1) / 2;
+        y = x;
+
+        while (z < y) {
+            y = z;
+            z = (x / z + z) / 2;
         }
     }
 
-    function _min(uint256 x, uint256 y) private pure returns (uint256) {
-        return x <= y ? x : y;
-    }
-
-    function _sqrt(uint256 y) private pure returns (uint256 z) {
-        if (y > 3) {
-            z = y;
-            uint256 x = (y / 2) + 1;
-
-            while (x < z) {
-                z = x;
-                x = ((y / x) + x) / 2;
-            }
-        } else if (y != 0) {
-            z = 1;
-        }
+    function _min(uint256 a, uint256 b) private pure returns (uint256) {
+        return a < b ? a : b;
     }
 }

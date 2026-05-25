@@ -43,6 +43,37 @@ function createActivity(log, payload) {
   };
 }
 
+function evidenceTypeLabel(value) {
+  const type = Number(value);
+
+  if (type === 1) return "Trade Receipt";
+  if (type === 2) return "Liquidity Receipt";
+  if (type === 3) return "Pool Audit Report";
+  if (type === 4) return "Governance Proposal";
+
+  return "Evidence";
+}
+
+function mapEvidenceAnchoredEvent(log) {
+  const args = log.args;
+
+  return createActivity(log, {
+    type: "EVIDENCE",
+    title: "Evidence Anchored",
+    user: shortAddress(args.submitter),
+    primary: evidenceTypeLabel(args.evidenceType),
+    secondary: String(args.evidenceURI || ""),
+    subject: args.subject,
+    contentHash: args.contentHash,
+    evidenceURI: args.evidenceURI,
+    description: `${shortAddress(
+      args.submitter
+    )} anchored ${evidenceTypeLabel(
+      args.evidenceType
+    )} with content hash ${String(args.contentHash).slice(0, 12)}...`,
+  });
+}
+
 function mapSwapEvent(log) {
   const args = log.args;
   const symbolIn = tokenSymbol(args.tokenIn);
@@ -190,7 +221,7 @@ export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
       const latestBlock = await provider.getBlockNumber();
       const fromBlock = Math.max(latestBlock - 10000, 0);
 
-      const [swaps, adds, removes, stakes, unstakes, claims] =
+      const [swaps, adds, removes, evidence, stakes, unstakes, claims] =
         await Promise.all([
           querySafely(
             amm,
@@ -212,6 +243,13 @@ export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
             fromBlock,
             latestBlock,
             mapRemoveLiquidityEvent
+          ),
+          querySafely(
+            amm,
+            amm.filters.EvidenceAnchored(),
+            fromBlock,
+            latestBlock,
+            mapEvidenceAnchoredEvent
           ),
           querySafely(
             stakingRewards,
@@ -240,6 +278,7 @@ export default function useSystemEvents(provider, refreshKey = 0, limit = 8) {
         ...swaps,
         ...adds,
         ...removes,
+        ...evidence,
         ...stakes,
         ...unstakes,
         ...claims,
