@@ -8,28 +8,23 @@ import TradeChartMock from "../../components/charts/TradeChartMock";
 import TradePanelCard from "./TradePanelCard";
 import PoolInsightStrip from "./PoolInsightStrip";
 import SystemActivityCard from "../activity/SystemActivityCard";
+import PageContainer from "../../components/layout/PageContainer";
 import { SYMBOLS } from "../../config/contracts";
 
 export default function TradePageLayout({ wallet, amm, trade, activity }) {
   const showStatus = wallet.status || amm.error;
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-6">
+    <PageContainer>
       <PageHero
         badge="Live AMM Trading"
         icon={<ArrowDownUp size={14} />}
         title="Swap assets with"
         highlight="transparent pricing"
-        description={`Trade ${SYMBOLS.tokenA} and ${SYMBOLS.tokenB} through a constant product AMM. Preview fee, slippage, price impact, and pool reserves before signing.`}
+        description={`Trade ${SYMBOLS.tokenA} and ${SYMBOLS.tokenB} through a constant-product AMM. Preview fee, slippage protection, price impact, and reserve movement before signing.`}
         stats={[
-          {
-            label: `Reserve ${SYMBOLS.tokenA}`,
-            value: amm.data.reserveA,
-          },
-          {
-            label: `Reserve ${SYMBOLS.tokenB}`,
-            value: amm.data.reserveB,
-          },
+          { label: `Reserve ${SYMBOLS.tokenA}`, value: amm.data.reserveA },
+          { label: `Reserve ${SYMBOLS.tokenB}`, value: amm.data.reserveB },
           {
             label: "Spot Price",
             value: `1 ${SYMBOLS.tokenA} = ${amm.data.priceAinB} ${SYMBOLS.tokenB}`,
@@ -37,32 +32,34 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
         ]}
       />
 
-      <StatusBanner message={showStatus} className="mt-5" />
+      <div className="mt-4">
+        <StatusBanner message={showStatus} />
+      </div>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-12 xl:items-stretch">
-        <aside className="xl:col-span-3">
-          <div className="grid h-full gap-5">
-            <PortfolioSidebar
-              ammData={amm.data}
-              connected={Boolean(wallet.address)}
-            />
-            <MarketsSidebar ammData={amm.data} />
-          </div>
+      <section className="mt-6 grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)_380px]">
+        <aside className="grid gap-5 xl:grid-rows-[minmax(320px,1fr)_minmax(320px,1fr)]">
+          <PortfolioSidebar
+            ammData={amm.data}
+            connected={Boolean(wallet.address)}
+          />
+          <MarketsSidebar ammData={amm.data} />
         </aside>
 
-        <section className="xl:col-span-6">
-          <div className="grid h-full gap-5">
-            <MarketOverviewCard
-              ammData={amm.data}
-              loading={amm.loading}
-              activity={activity}
-            />
-            <PoolInsightStrip ammData={amm.data} activity={activity} />
+        <section className="grid gap-5">
+          <MarketOverviewCard
+            ammData={amm.data}
+            loading={amm.loading}
+            activity={activity}
+          />
+
+          <PoolInsightStrip ammData={amm.data} activity={activity} />
+
+          <div className="min-h-[360px]">
             <TradeChartMock ammData={amm.data} />
           </div>
         </section>
 
-        <aside className="xl:col-span-3">
+        <aside className="pro-sticky h-fit">
           <TradePanelCard
             ammData={amm.data}
             connected={Boolean(wallet.address)}
@@ -84,6 +81,6 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
           maxHeight="360px"
         />
       </section>
-    </main>
+    </PageContainer>
   );
 }

@@ -9,7 +9,7 @@ export default function AppShell({
   wallet = null,
 }) {
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
+    <div className="production-shell text-[var(--text)]">
       <Navbar
         currentPage={currentPage}
         onNavigate={onNavigate}

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { ethers } from "ethers";
 import SurfaceCard from "../../components/common/SurfaceCard";
 import TokenAmountInput from "../../components/common/TokenAmountInput";
 import {
@@ -14,9 +13,9 @@ import { parseToken } from "../../lib/format";
 import { SYMBOLS } from "../../config/contracts";
 
 const SLIPPAGE_OPTIONS = [
-  { label: "0.5% - Tight protection", value: 50 },
+  { label: "0.5% - Tight", value: 50 },
   { label: "1% - Recommended", value: 100 },
-  { label: "2% - Volatile pool", value: 200 },
+  { label: "2% - Volatile", value: 200 },
   { label: "3% - High risk", value: 300 },
 ];
 
@@ -36,29 +35,17 @@ export default function TradePanelCard({
   const [direction, setDirection] = useState(DIRECTIONS.A_TO_B);
 
   const isAToB = direction === DIRECTIONS.A_TO_B;
-
   const inputSymbol = isAToB ? SYMBOLS.tokenA : SYMBOLS.tokenB;
   const outputSymbol = isAToB ? SYMBOLS.tokenB : SYMBOLS.tokenA;
-
   const reserveInRaw = isAToB ? ammData.reserveARaw : ammData.reserveBRaw;
   const reserveOutRaw = isAToB ? ammData.reserveBRaw : ammData.reserveARaw;
-
-  const poolPriceLabel = isAToB
-    ? `1 ${SYMBOLS.tokenA} = ${ammData.priceAinB} ${SYMBOLS.tokenB}`
-    : `1 ${SYMBOLS.tokenB} = ${ammData.priceBinA} ${SYMBOLS.tokenA}`;
 
   const quote = useMemo(() => {
     try {
       if (!ammData.hasLiquidity) return emptyQuote();
 
       const amountInRaw = parseToken(amount || "0");
-
-      const amountOutRaw = getAmountOut(
-        amountInRaw,
-        reserveInRaw,
-        reserveOutRaw
-      );
-
+      const amountOutRaw = getAmountOut(amountInRaw, reserveInRaw, reserveOutRaw);
       const minOutRaw = applySlippage(amountOutRaw, slippageBps);
 
       const priceImpactNumber = calculatePriceImpact({
@@ -69,12 +56,9 @@ export default function TradePanelCard({
       });
 
       return {
-        amountInRaw,
-        amountOutRaw,
-        minOutRaw,
         estimatedOut: formatQuote(amountOutRaw),
         minReceived: formatQuote(minOutRaw),
-        minReceivedRaw: ethers.formatUnits(minOutRaw, 18),
+        minReceivedRaw: String(Number(formatQuote(minOutRaw, 18, 18).replaceAll(",", "")) || 0),
         slippagePercent: formatBpsToPercent(slippageBps),
         priceImpact: `${priceImpactNumber.toFixed(2)}%`,
         priceImpactNumber,
@@ -85,11 +69,6 @@ export default function TradePanelCard({
   }, [amount, ammData.hasLiquidity, reserveInRaw, reserveOutRaw, slippageBps]);
 
   const impactTone = getPriceImpactTone(quote.priceImpactNumber);
-
-  function selectDirection(nextDirection) {
-    setDirection(nextDirection);
-    setAmount("100");
-  }
 
   async function handleSwap() {
     if (!connected) {
@@ -107,47 +86,48 @@ export default function TradePanelCard({
   }
 
   return (
-    <SurfaceCard className="flex h-full flex-col p-5">
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => selectDirection(DIRECTIONS.A_TO_B)}
-          className={
-            isAToB
-              ? "rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white"
-              : "rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]"
-          }
-        >
-          Swap {SYMBOLS.tokenA} → {SYMBOLS.tokenB}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => selectDirection(DIRECTIONS.B_TO_A)}
-          className={
-            !isAToB
-              ? "rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white"
-              : "rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-semibold text-[var(--text)]"
-          }
-        >
-          Swap {SYMBOLS.tokenB} → {SYMBOLS.tokenA}
-        </button>
+    <SurfaceCard className="pro-card-glow flex min-h-[660px] flex-col p-5">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <div className="pro-chip">AMM Swap</div>
+          <h2 className="mt-3 text-2xl font-black text-[var(--text)]">
+            Swap {inputSymbol}
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+            Price is reserve-driven. Slippage only protects minimum output.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-5">
-        <h3 className="text-[16px] font-bold text-[var(--text)]">
-          Swap {inputSymbol} → {outputSymbol}
-        </h3>
-        <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-          Price is calculated from pool reserves using the constant product AMM
-          model. Every swap changes the reserves, so the execution price can
-          move before the transaction is confirmed.
-        </p>
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-1.5">
+        <button
+          type="button"
+          onClick={() => setDirection(DIRECTIONS.A_TO_B)}
+          className={`rounded-xl px-3 py-2.5 text-sm font-black transition ${
+            isAToB
+              ? "pro-action text-white"
+              : "text-[var(--muted)] hover:bg-[var(--surface)]"
+          }`}
+        >
+          Buy {SYMBOLS.tokenB}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setDirection(DIRECTIONS.B_TO_A)}
+          className={`rounded-xl px-3 py-2.5 text-sm font-black transition ${
+            !isAToB
+              ? "pro-action text-white"
+              : "text-[var(--muted)] hover:bg-[var(--surface)]"
+          }`}
+        >
+          Sell {SYMBOLS.tokenB}
+        </button>
       </div>
 
       <div className="mt-5">
         <TokenAmountInput
-          label="Amount to swap"
+          label="Amount to spend"
           value={amount}
           onChange={setAmount}
           symbol={inputSymbol}
@@ -155,21 +135,34 @@ export default function TradePanelCard({
         />
       </div>
 
-      <QuoteBox
-        quote={quote}
-        impactTone={impactTone}
-        inputSymbol={inputSymbol}
-        outputSymbol={outputSymbol}
-        poolPriceLabel={poolPriceLabel}
-      />
+      <div className="mt-5 rounded-[24px] border border-[var(--primary-border)] bg-[var(--primary-soft)] p-5">
+        <p className="text-xs font-bold text-[var(--muted)]">Estimated output</p>
+        <div className="mt-2 text-4xl font-black tracking-tight text-[var(--primary-dark)]">
+          {quote.estimatedOut} {outputSymbol}
+        </div>
+
+        <div className="mt-5 grid gap-2">
+          <InfoRow label="Route" value={`${inputSymbol} → ${outputSymbol}`} />
+          <InfoRow label="Trading fee" value="0.3%" />
+          <InfoRow
+            label="Price impact"
+            value={quote.priceImpact}
+            tone={impactTone}
+          />
+          <InfoRow
+            label="Minimum received"
+            value={`${quote.minReceived} ${outputSymbol}`}
+            tone="success"
+          />
+        </div>
+      </div>
 
       <div className="mt-5">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <label className="block text-sm font-medium text-[var(--text)]">
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-sm font-black text-[var(--text)]">
             Slippage tolerance (%)
           </label>
-
-          <span className="rounded-full bg-[var(--surface-soft)] px-3 py-1 text-xs font-bold text-[var(--muted)]">
+          <span className="text-xs font-bold text-[var(--muted)]">
             Current: {quote.slippagePercent}
           </span>
         </div>
@@ -177,7 +170,7 @@ export default function TradePanelCard({
         <select
           value={slippageBps}
           onChange={(e) => setSlippageBps(Number(e.target.value))}
-          className="w-full rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-medium text-[var(--text)] outline-none"
+          className="pro-input w-full px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
         >
           {SLIPPAGE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -186,22 +179,11 @@ export default function TradePanelCard({
           ))}
         </select>
 
-        <div className="mt-3 rounded-[14px] border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
-          Slippage tolerance is the maximum price movement you accept before
-          the transaction reverts. Example: if the quote is 100{" "}
-          {outputSymbol} and slippage is 1%, the smart contract requires at
-          least 99 {outputSymbol}. If the pool price changes too much, the swap
-          fails and state is rolled back.
+        <div className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-3 text-xs leading-5 text-[var(--muted)]">
+          Slippage tolerance sets <b>minAmountOut</b>. If the pool reserve ratio
+          changes too much before confirmation, the transaction reverts.
         </div>
       </div>
-
-      {quote.priceImpactNumber >= 5 ? (
-        <div className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-          High price impact. This trade changes the pool reserve ratio
-          noticeably. Consider reducing the input amount or adding more
-          liquidity first.
-        </div>
-      ) : null}
 
       <button
         type="button"
@@ -212,7 +194,7 @@ export default function TradePanelCard({
           !amount ||
           Number(amount) <= 0
         }
-        className="mt-auto w-full rounded-[16px] bg-[var(--primary)] px-5 py-4 text-base font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        className="pro-action mt-auto w-full rounded-[20px] px-5 py-4 text-base font-black text-white transition disabled:cursor-not-allowed disabled:opacity-60"
       >
         {!connected
           ? "Connect Wallet"
@@ -223,51 +205,6 @@ export default function TradePanelCard({
           : `Swap ${inputSymbol}`}
       </button>
     </SurfaceCard>
-  );
-}
-
-function QuoteBox({
-  quote,
-  impactTone,
-  inputSymbol,
-  outputSymbol,
-  poolPriceLabel,
-}) {
-  return (
-    <div className="mt-5 rounded-[18px] border border-teal-200 bg-teal-50 p-4 dark:border-teal-500/20 dark:bg-teal-500/10">
-      <div className="text-sm text-[var(--muted)]">Estimated output</div>
-
-      <div className="mt-2 text-[30px] font-bold leading-none text-teal-600 dark:text-teal-300">
-        {quote.estimatedOut} {outputSymbol}
-      </div>
-
-      <div className="mt-4 grid gap-2">
-        <InfoRow label="Route" value={`${inputSymbol} → ${outputSymbol}`} />
-        <InfoRow label="Pool spot price" value={poolPriceLabel} />
-        <InfoRow label="Trading fee" value="0.3%" />
-        <InfoRow
-          label="Price impact"
-          value={quote.priceImpact}
-          tone={impactTone}
-        />
-        <InfoRow
-          label="Slippage tolerance"
-          value={quote.slippagePercent}
-          tone="warning"
-        />
-        <InfoRow
-          label="Minimum received"
-          value={`${quote.minReceived} ${outputSymbol}`}
-          tone="success"
-        />
-      </div>
-
-      <div className="mt-4 rounded-[14px] bg-white/60 px-4 py-3 text-xs leading-5 text-teal-800 dark:bg-white/5 dark:text-teal-200">
-        Minimum received is sent to the smart contract as{" "}
-        <span className="font-bold">minAmountOut</span>. If the actual output is
-        lower than this value, the transaction reverts automatically.
-      </div>
-    </div>
   );
 }
 
@@ -282,16 +219,13 @@ function InfoRow({ label, value, tone = "neutral" }) {
   return (
     <div className="flex items-center justify-between gap-4 text-sm">
       <span className="text-[var(--muted)]">{label}</span>
-      <span className={`text-right font-bold ${toneClass}`}>{value}</span>
+      <span className={`text-right font-black ${toneClass}`}>{value}</span>
     </div>
   );
 }
 
 function emptyQuote() {
   return {
-    amountInRaw: 0n,
-    amountOutRaw: 0n,
-    minOutRaw: 0n,
     estimatedOut: "0",
     minReceived: "0",
     minReceivedRaw: "0",

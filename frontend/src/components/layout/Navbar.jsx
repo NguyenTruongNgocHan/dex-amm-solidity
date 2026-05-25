@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sprout,
   Sun,
+  UserCheck,
   Wallet,
 } from "lucide-react";
 import Button from "../common/Button";
@@ -17,13 +18,13 @@ import { shortAddress } from "../../lib/format";
 import useAccessProfile from "../../hooks/useAccessProfile";
 
 const navItems = [
-  { key: "home", label: "Home", icon: <Home size={15} />, access: "public" },
-  { key: "trade", label: "Trade", icon: <ArrowDownUp size={15} />, access: "public" },
-  { key: "liquidity", label: "Liquidity", icon: <Droplets size={15} />, access: "public" },
-  { key: "farm", label: "Farm", icon: <Sprout size={15} />, access: "connected" },
-  { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={15} />, access: "public" },
-  { key: "access", label: "Access", icon: <ShieldCheck size={15} />, access: "connected" },
-  { key: "admin", label: "Admin", icon: <ShieldCheck size={15} />, access: "admin" },
+  { key: "home", label: "Home", icon: <Home size={14} />, access: "public" },
+  { key: "trade", label: "Trade", icon: <ArrowDownUp size={14} />, access: "public" },
+  { key: "liquidity", label: "Liquidity", icon: <Droplets size={14} />, access: "public" },
+  { key: "farm", label: "Farm", icon: <Sprout size={14} />, access: "connected" },
+  { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={14} />, access: "public" },
+  { key: "access", label: "Access", icon: <UserCheck size={14} />, access: "connected" },
+  { key: "admin", label: "Admin", icon: <ShieldCheck size={14} />, access: "admin" },
 ];
 
 export default function Navbar({
@@ -36,18 +37,19 @@ export default function Navbar({
   const { theme, toggleTheme } = useTheme();
   const { profile } = useAccessProfile(wallet);
 
+  const roleLabel = profile.isAdmin
+    ? "Admin"
+    : profile.isOperator
+    ? "Operator"
+    : profile.isAuditor
+    ? "Auditor"
+    : profile.participantLabel;
+
   function canAccess(item) {
     if (item.access === "public") return true;
     if (item.access === "connected") return Boolean(walletAddress);
     if (item.access === "admin") return profile.canViewAdmin;
     return false;
-  }
-
-  function getAccessHint(item) {
-    if (item.access === "public") return "Public view";
-    if (item.access === "connected") return "Connect wallet required";
-    if (item.access === "admin") return "Admin / Operator / Auditor only";
-    return "";
   }
 
   const navItem = (item) => {
@@ -57,21 +59,18 @@ export default function Navbar({
     return (
       <button
         key={item.key}
-        title={getAccessHint(item)}
         disabled={!allowed}
-        onClick={() => {
-          if (allowed) onNavigate?.(item.key);
-        }}
-        className={`group inline-flex items-center gap-2 rounded-2xl px-3.5 py-2 text-sm font-bold transition duration-200 ${
+        onClick={() => allowed && onNavigate?.(item.key)}
+        className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-black transition ${
           active
-            ? "bg-slate-950 text-white shadow-lg shadow-slate-950/15 dark:bg-white dark:text-slate-950"
+            ? "bg-white text-slate-950 shadow-sm dark:bg-white dark:text-slate-950"
             : allowed
-            ? "text-[var(--muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)] hover:text-[var(--text)]"
+            ? "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
             : "cursor-not-allowed text-[var(--muted)] opacity-40"
         }`}
       >
-        <span className={active ? "text-current" : "text-[var(--primary)]"}>
-          {allowed ? item.icon : <Lock size={15} />}
+        <span className={active ? "text-slate-950" : "text-[var(--primary)]"}>
+          {allowed ? item.icon : <Lock size={14} />}
         </span>
         {item.label}
       </button>
@@ -79,56 +78,52 @@ export default function Navbar({
   };
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur-2xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <nav className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--surface)]/88 backdrop-blur-2xl">
+      <div className="mx-auto flex h-16 max-w-[1360px] items-center justify-between gap-4 px-5">
         <button
           onClick={() => onNavigate?.("home")}
-          className="group flex items-center gap-3 text-left"
+          className="flex min-w-[160px] items-center gap-3 text-left"
         >
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/25 transition group-hover:scale-105">
-            <BarChart3 size={21} />
+          <div className="grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/25">
+            <BarChart3 size={19} />
           </div>
 
-          <div>
-            <div className="text-[19px] font-black tracking-tight text-[var(--text)]">
+          <div className="leading-tight">
+            <div className="text-base font-black tracking-tight text-[var(--text)]">
               DEXCK
             </div>
-            <div className="text-xs font-semibold text-[var(--muted)]">
-              AMM · Access Control · Audit-ready
+            <div className="max-w-[120px] truncate text-[11px] font-bold text-[var(--muted)]">
+              AMM · Swap · Farm
             </div>
           </div>
         </button>
 
-        <div className="hidden items-center gap-1.5 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-1.5 md:flex">
-          {navItems.map(navItem)}
+        <div className="hidden flex-1 justify-center xl:flex">
+          <div className="flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface-soft)] p-1">
+            {navItems.map(navItem)}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-2">
           {walletAddress ? (
-            <div className="hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-2 text-xs font-bold text-[var(--text)] lg:block">
-              {profile.isAdmin
-                ? "Admin"
-                : profile.isOperator
-                ? "Operator"
-                : profile.isAuditor
-                ? "Auditor"
-                : profile.participantLabel}
+            <div className="hidden h-9 items-center rounded-full border border-[var(--primary-border)] bg-[var(--primary-soft)] px-3 text-[11px] font-black text-[var(--primary-dark)] lg:inline-flex">
+              {roleLabel}
             </div>
           ) : null}
 
           <button
             onClick={toggleTheme}
-            className="grid h-11 w-11 place-items-center rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] transition hover:-translate-y-0.5 hover:border-[var(--primary-border)] hover:text-[var(--primary-dark)]"
-            aria-label="Toggle theme"
+            className="grid h-9 w-9 place-items-center rounded-full border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] transition hover:border-[var(--primary-border)]"
           >
-            {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           <Button
             variant={walletAddress ? "secondary" : "primary"}
             onClick={onConnect}
+            className="h-9 rounded-full px-3 text-xs"
           >
-            <Wallet size={16} />
+            <Wallet size={14} />
             {walletAddress ? shortAddress(walletAddress) : "Connect"}
           </Button>
         </div>
