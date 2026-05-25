@@ -22,6 +22,14 @@ async function approveIfNeeded(token, owner, spender, amount, label, setStatus) 
   await approveTx.wait();
 }
 
+function calculateFee(amountIn) {
+  const value = Number(amountIn || 0);
+
+  if (!Number.isFinite(value)) return "0";
+
+  return (value * 0.003).toFixed(8);
+}
+
 export default function useTradeActions(signer, reload, setStatus) {
   const [pending, setPending] = useState(false);
 
@@ -103,11 +111,9 @@ export default function useTradeActions(signer, reload, setStatus) {
 
       const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
 
-      const swapTx = await amm["swapExactTokenAForTokenB(uint256,uint256,uint256)"](
-        parsedAmountIn,
-        parsedMinAmountOut,
-        deadline
-      );
+      const swapTx = await amm[
+        "swapExactTokenAForTokenB(uint256,uint256,uint256)"
+      ](parsedAmountIn, parsedMinAmountOut, deadline);
 
       const receipt = await swapTx.wait();
 
@@ -121,11 +127,15 @@ export default function useTradeActions(signer, reload, setStatus) {
         minAmountOut,
         amountOut: formatToken(quotedOut, 18, 8),
         blockNumber: receipt.blockNumber,
+        contractAddress: ammAddress,
+        slippageTolerance: "User-defined in swap panel",
+        priceImpact: "Calculated in frontend preview",
+        fee: `${calculateFee(amountIn)} ${SYMBOLS.tokenA}`,
       });
 
       await uploadReceiptSafely(tradeReceipt);
 
-      setStatus?.("Swap successful. Receipt saved.");
+      setStatus?.("Swap successful. Privacy-safe receipt saved.");
       await reload?.();
     } catch (error) {
       console.error(error);
@@ -181,11 +191,9 @@ export default function useTradeActions(signer, reload, setStatus) {
 
       const deadline = Math.floor(Date.now() / 1000) + 20 * 60;
 
-      const swapTx = await amm["swapExactTokenBForTokenA(uint256,uint256,uint256)"](
-        parsedAmountIn,
-        parsedMinAmountOut,
-        deadline
-      );
+      const swapTx = await amm[
+        "swapExactTokenBForTokenA(uint256,uint256,uint256)"
+      ](parsedAmountIn, parsedMinAmountOut, deadline);
 
       const receipt = await swapTx.wait();
 
@@ -199,11 +207,15 @@ export default function useTradeActions(signer, reload, setStatus) {
         minAmountOut,
         amountOut: formatToken(quotedOut, 18, 8),
         blockNumber: receipt.blockNumber,
+        contractAddress: ammAddress,
+        slippageTolerance: "User-defined in swap panel",
+        priceImpact: "Calculated in frontend preview",
+        fee: `${calculateFee(amountIn)} ${SYMBOLS.tokenB}`,
       });
 
       await uploadReceiptSafely(tradeReceipt);
 
-      setStatus?.("Swap successful. Receipt saved.");
+      setStatus?.("Swap successful. Privacy-safe receipt saved.");
       await reload?.();
     } catch (error) {
       console.error(error);

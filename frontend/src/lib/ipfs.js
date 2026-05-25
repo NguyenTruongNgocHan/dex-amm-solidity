@@ -1,4 +1,5 @@
 import { HARDHAT_CHAIN_ID, SYMBOLS } from "../config/contracts";
+import { createWalletHash } from "./privacy";
 
 const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
 const PINATA_ENDPOINT = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
@@ -38,6 +39,7 @@ export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
       content,
       createdAt: new Date().toISOString(),
       mode: "local-demo",
+      note: "Local fallback is used when VITE_PINATA_JWT is not configured. Production mode should use Pinata/IPFS gateway.",
     };
 
     writeLocalCache(cache);
@@ -105,7 +107,7 @@ export async function retrieveJsonFromIPFS(cid) {
 export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
   return {
     name: "DEXCK Token List",
-    description: "Supported tokens for DEXCK AMM demo",
+    description: "Supported tokens for DEXCK AMM production-like demo",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
     chainId: HARDHAT_CHAIN_ID,
@@ -159,9 +161,9 @@ export function createGovernanceProposal({
     title,
     description,
     proposedFeeBps,
-    proposer,
+    proposerHash: createWalletHash(proposer),
     createdAt: new Date().toISOString(),
-    note: "This proposal is stored on IPFS as off-chain governance documentation.",
+    note: "This proposal is stored on IPFS as off-chain governance documentation. Raw wallet address is not stored in this metadata.",
   };
 }
 
@@ -175,20 +177,31 @@ export function createTradeReceipt({
   amountOut,
   minAmountOut,
   blockNumber,
+  contractAddress,
+  slippageTolerance,
+  priceImpact,
+  fee,
 }) {
   return {
     type: "trade-receipt",
     project: "DEXCK AMM",
+    chainId: HARDHAT_CHAIN_ID,
     txHash,
-    trader,
+    blockNumber,
+    walletHash: createWalletHash(trader),
     direction,
     tokenIn,
     tokenOut,
     amountIn,
     amountOut,
-    minAmountOut,
-    blockNumber,
+    minimumReceived: minAmountOut,
+    slippageTolerance,
+    priceImpact,
+    fee,
+    contractAddress,
     createdAt: new Date().toISOString(),
+    privacyNote:
+      "Raw wallet address is intentionally not stored in IPFS receipt. On-chain address remains public by Ethereum design; off-chain evidence stores only walletHash.",
   };
 }
 

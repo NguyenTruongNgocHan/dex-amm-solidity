@@ -7,6 +7,8 @@ import FarmPage from "./pages/FarmPage";
 import AdminPage from "./pages/AdminPage";
 import AccessRequestPage from "./pages/AccessRequestPage";
 import EvidencePage from "./pages/EvidencePage";
+import AuditPage from "./pages/AuditPage";
+import RiskMonitorPage from "./pages/RiskMonitorPage";
 import useWallet from "./hooks/useWallet";
 
 const PATH_TO_PAGE = {
@@ -15,9 +17,11 @@ const PATH_TO_PAGE = {
   "/liquidity": "liquidity",
   "/farm": "farm",
   "/dashboard": "dashboard",
+  "/admin": "admin",
+  "/audit": "audit",
+  "/risk-monitor": "risk",
   "/evidence": "evidence",
   "/access": "access",
-  "/admin": "admin",
 };
 
 const PAGE_TO_PATH = {
@@ -26,9 +30,11 @@ const PAGE_TO_PATH = {
   liquidity: "/liquidity",
   farm: "/farm",
   dashboard: "/dashboard",
+  admin: "/admin",
+  audit: "/audit",
+  risk: "/risk-monitor",
   evidence: "/evidence",
   access: "/access",
-  admin: "/admin",
 };
 
 function getPageFromPath() {
@@ -80,8 +86,10 @@ function App() {
   if (page === "liquidity") return <LiquidityPage {...commonProps} />;
   if (page === "farm") return <FarmPage {...commonProps} />;
   if (page === "dashboard") return <DashboardPage {...commonProps} />;
-  if (page === "evidence") return <EvidencePage {...commonProps} />;
   if (page === "admin") return <AdminPage {...commonProps} />;
+  if (page === "audit") return <AuditPage {...commonProps} />;
+  if (page === "risk") return <RiskMonitorPage {...commonProps} />;
+  if (page === "evidence") return <EvidencePage {...commonProps} />;
   if (page === "access") return <AccessRequestPage {...commonProps} />;
 
   return <HomePage {...commonProps} />;

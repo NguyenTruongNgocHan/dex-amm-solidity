@@ -23,14 +23,14 @@ describe("Production Access Control", function () {
     [admin, operator, auditor, trader] = await ethers.getSigners();
 
     tokenA = await ethers.deployContract("MockERC20", [
-      "Token A",
-      "TKA",
+      "Demo Token A",
+      "DTA",
       toWei("1000000"),
     ]);
 
     tokenB = await ethers.deployContract("MockERC20", [
-      "Token B",
-      "TKB",
+      "Demo Token B",
+      "DTB",
       toWei("1000000"),
     ]);
 
@@ -72,25 +72,30 @@ describe("Production Access Control", function () {
     const operatorRole = await amm.OPERATOR_ROLE();
     const auditorRole = await amm.AUDITOR_ROLE();
 
-    await expect(amm.grantRole(operatorRole, operator.address))
-      .to.emit(amm, "RoleGranted");
+    await expect(amm.grantRole(operatorRole, operator.address)).to.emit(
+      amm,
+      "RoleGranted"
+    );
 
-    await expect(amm.grantRole(auditorRole, auditor.address))
-      .to.emit(amm, "RoleGranted");
+    await expect(amm.grantRole(auditorRole, auditor.address)).to.emit(
+      amm,
+      "RoleGranted"
+    );
 
     expect(await amm.hasRole(operatorRole, operator.address)).to.equal(true);
     expect(await amm.hasRole(auditorRole, auditor.address)).to.equal(true);
   });
 
-  it("should reject non-operator when changing trading status", async function () {
-    await expect(amm.connect(trader).setTradingEnabled(false))
-      .to.be.revertedWithCustomError(
-        amm,
-        "AccessControlUnauthorizedAccount"
-      );
+  it("should reject normal trader when changing trading status", async function () {
+    await expect(
+      amm.connect(trader).setTradingEnabled(false)
+    ).to.be.revertedWithCustomError(
+      amm,
+      "AccessControlUnauthorizedAccount"
+    );
   });
 
-  it("should let operator disable trading and block user operations", async function () {
+  it("should allow operator to disable trading and block user swaps", async function () {
     const operatorRole = await amm.OPERATOR_ROLE();
 
     await amm.grantRole(operatorRole, operator.address);
@@ -106,7 +111,7 @@ describe("Production Access Control", function () {
     ).to.be.revertedWith("Trading disabled");
   });
 
-  it("should allow admin to pause and unpause AMM", async function () {
+  it("should allow admin to pause and unpause the AMM", async function () {
     await amm.pause();
 
     expect(await amm.paused()).to.equal(true);
@@ -122,23 +127,38 @@ describe("Production Access Control", function () {
     expect(await amm.paused()).to.equal(false);
   });
 
+  it("should reject operator from granting roles because only admin can manage roles", async function () {
+    const operatorRole = await amm.OPERATOR_ROLE();
+    const auditorRole = await amm.AUDITOR_ROLE();
+
+    await amm.grantRole(operatorRole, operator.address);
+
+    await expect(
+      amm.connect(operator).grantRole(auditorRole, trader.address)
+    ).to.be.revertedWithCustomError(
+      amm,
+      "AccessControlUnauthorizedAccount"
+    );
+  });
+
   it("should allow auditor to submit audit note", async function () {
     const auditorRole = await amm.AUDITOR_ROLE();
-    const subject = ethers.keccak256(ethers.toUtf8Bytes("pool-risk-report-001"));
+    const subject = ethers.keccak256(
+      ethers.toUtf8Bytes("pool-risk-report-001")
+    );
 
     await amm.grantRole(auditorRole, auditor.address);
 
     await expect(
-      amm.connect(auditor).submitAuditNote(
-        subject,
-        "ipfs://bafy-demo-pool-risk-report"
-      )
+      amm
+        .connect(auditor)
+        .submitAuditNote(subject, "ipfs://bafy-demo-pool-risk-report")
     )
       .to.emit(amm, "AuditNoteSubmitted")
       .withArgs(auditor.address, subject, "ipfs://bafy-demo-pool-risk-report");
   });
 
-  it("should reject non-auditor audit note", async function () {
+  it("should reject normal trader from submitting audit note", async function () {
     const subject = ethers.keccak256(ethers.toUtf8Bytes("fake-audit-note"));
 
     await expect(
@@ -149,7 +169,7 @@ describe("Production Access Control", function () {
     );
   });
 
-  it("should require operator role to fund staking rewards", async function () {
+  it("should require operator role to notify staking rewards", async function () {
     await rewardToken.mint(await stakingRewards.getAddress(), toWei("1000"));
 
     await expect(
@@ -160,7 +180,7 @@ describe("Production Access Control", function () {
     );
   });
 
-  it("should let staking operator notify rewards", async function () {
+  it("should allow staking operator to notify rewards", async function () {
     const operatorRole = await stakingRewards.OPERATOR_ROLE();
 
     await stakingRewards.grantRole(operatorRole, operator.address);

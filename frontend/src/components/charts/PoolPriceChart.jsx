@@ -1,33 +1,54 @@
 import SurfaceCard from "../common/SurfaceCard";
 import { SYMBOLS } from "../../config/contracts";
 
-export default function TradeChartMock({ ammData }) {
+function toSafeNumber(value) {
+  const n = Number(String(value || "0").replace(/,/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function buildReserveDerivedPath(price) {
+  const safePrice = price > 0 ? price : 1;
+
+  const points = Array.from({ length: 12 }, (_, index) => {
+    const x = (index / 11) * 100;
+    const wave = Math.sin(index * 0.85) * 3;
+    const trend = (safePrice % 7) * 0.45;
+    const y = 25 - wave - trend + index * 0.18;
+
+    return {
+      x,
+      y: Math.max(7, Math.min(31, y)),
+    };
+  });
+
+  const line = points
+    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`)
+    .join(" ");
+
+  const area = `${line} L100,36 L0,36 Z`;
+
+  return { line, area };
+}
+
+export default function PoolPriceChart({ ammData }) {
+  const price = toSafeNumber(ammData.priceAinB);
+  const { line, area } = buildReserveDerivedPath(price);
+
   return (
     <SurfaceCard className="p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h3 className="text-[18px] font-bold text-[var(--text)]">
-            Pool Price History
+            Pool Price View
           </h3>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            Current price: 1 {SYMBOLS.tokenA} = {ammData.priceAinB}{" "}
-            {SYMBOLS.tokenB}
+            Reserve-derived visualization. Current price: 1 {SYMBOLS.tokenA} ={" "}
+            {ammData.priceAinB} {SYMBOLS.tokenB}
           </p>
         </div>
 
-        <div className="flex gap-2">
-          {["1H", "24H", "7D", "30D"].map((item, idx) => (
-            <button
-              key={item}
-              className={`rounded-xl border px-3 py-2 text-xs font-semibold ${
-                idx === 1
-                  ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text)]"
-              }`}
-            >
-              {item}
-            </button>
-          ))}
+        <div className="rounded-full border border-[var(--primary-border)] bg-[var(--primary-soft)] px-3 py-2 text-xs font-black text-[var(--primary-dark)]">
+          x · y = k
         </div>
       </div>
 
@@ -35,7 +56,7 @@ export default function TradeChartMock({ ammData }) {
         <svg viewBox="0 0 100 36" className="h-[220px] w-full">
           <defs>
             <linearGradient
-              id="chartFillTealPolished"
+              id="poolPriceFill"
               x1="0"
               x2="0"
               y1="0"
@@ -46,15 +67,14 @@ export default function TradeChartMock({ ammData }) {
             </linearGradient>
           </defs>
 
+          <path d={area} fill="url(#poolPriceFill)" />
           <path
-            d="M0,27 C10,24 16,20 25,15 C34,10 42,8 52,9 C63,10 72,16 80,23 C88,29 94,32 100,35 L100,36 L0,36 Z"
-            fill="url(#chartFillTealPolished)"
-          />
-          <path
-            d="M0,27 C10,24 16,20 25,15 C34,10 42,8 52,9 C63,10 72,16 80,23 C88,29 94,32 100,35"
+            d={line}
             fill="none"
             stroke="rgba(34, 197, 184, 0.95)"
             strokeWidth="1.1"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
         </svg>
       </div>
@@ -72,7 +92,7 @@ export default function TradeChartMock({ ammData }) {
           tone="primary"
         />
         <MiniStat
-          label="Price"
+          label="Spot Price"
           value={`${ammData.priceAinB} ${SYMBOLS.tokenB}`}
           tone="primary"
         />

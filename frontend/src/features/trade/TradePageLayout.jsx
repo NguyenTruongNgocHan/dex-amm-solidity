@@ -4,7 +4,7 @@ import StatusBanner from "../../components/common/StatusBanner";
 import PortfolioSidebar from "./PortfolioSidebar";
 import MarketsSidebar from "./MarketsSidebar";
 import MarketOverviewCard from "./MarketOverviewCard";
-import TradeChartMock from "../../components/charts/TradeChartMock";
+import PoolPriceChart from "../../components/charts/PoolPriceChart";
 import TradePanelCard from "./TradePanelCard";
 import PoolInsightStrip from "./PoolInsightStrip";
 import SystemActivityCard from "../activity/SystemActivityCard";
@@ -54,7 +54,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
 
           <PoolInsightStrip ammData={amm.data} activity={activity} />
 
-          <TradeChartMock ammData={amm.data} />
+          <PoolPriceChart ammData={amm.data} />
         </section>
 
         <aside className="flex min-h-[720px]">
