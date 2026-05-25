@@ -2,12 +2,14 @@ import { SYMBOLS } from "../../config/contracts";
 
 function StatCard({ label, value, suffix, highlight }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-      <p className="text-sm text-[var(--muted)]">{label}</p>
+    <div className="pro-card rounded-3xl p-5">
+      <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">
+        {label}
+      </p>
 
       <div
-        className={`mt-2 text-2xl font-black ${
-          highlight ? "text-[var(--primary)]" : "text-[var(--text)]"
+        className={`mt-3 text-2xl font-black ${
+          highlight ? "gradient-text" : "text-[var(--text)]"
         }`}
       >
         {value}

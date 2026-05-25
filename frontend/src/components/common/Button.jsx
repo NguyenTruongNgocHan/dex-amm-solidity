@@ -6,7 +6,7 @@ export default function Button({
   ...props
 }) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-2xl font-bold transition duration-200 focus:outline-none focus:ring-4 focus:ring-[var(--primary-soft)] disabled:cursor-not-allowed disabled:opacity-55";
+    "inline-flex items-center justify-center gap-2 rounded-2xl font-black transition duration-200 focus:outline-none focus:ring-4 focus:ring-[var(--primary-soft)] disabled:cursor-not-allowed disabled:opacity-55";
 
   const sizes = {
     sm: "px-3 py-2 text-xs",
@@ -16,15 +16,15 @@ export default function Button({
 
   const styles = {
     primary:
-      "border border-transparent bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-teal-500/25",
+      "border border-transparent bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-500 text-white shadow-lg shadow-teal-500/20 hover:-translate-y-0.5 hover:shadow-xl",
     secondary:
-      "border border-[var(--primary-border)] bg-[var(--primary-soft)] text-[var(--primary-dark)] hover:-translate-y-0.5 hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]",
+      "border border-[var(--primary-border)] bg-[var(--primary-soft)] text-[var(--primary-dark)] hover:-translate-y-0.5",
     ghost:
-      "border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] hover:-translate-y-0.5 hover:bg-[var(--surface-soft)]",
+      "border border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text)] hover:-translate-y-0.5 hover:border-[var(--primary-border)]",
     danger:
-      "border border-red-200 bg-red-50 text-red-600 hover:-translate-y-0.5 hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300",
-    dark:
-      "border border-slate-800 bg-slate-950 text-white hover:-translate-y-0.5 hover:bg-slate-900 dark:border-white/10",
+      "border border-[var(--danger-border)] bg-[var(--danger-soft)] text-[var(--danger)] hover:-translate-y-0.5",
+    success:
+      "border border-[var(--success-border)] bg-[var(--success-soft)] text-[var(--success)] hover:-translate-y-0.5",
   };
 
   return (

@@ -6,20 +6,25 @@ export default function SurfaceCard({
   scroll = false,
   minHeight,
   maxHeight,
+  variant = "default",
 }) {
-  const style = {
-    minHeight,
-    maxHeight,
+  const style = { minHeight, maxHeight };
+
+  const variants = {
+    default: "surface-card",
+    soft: "surface-card-soft",
+    action: "dex-action-panel",
+    panel: "dex-panel",
   };
 
   return (
-    <div
+    <section
       style={style}
-      className={`surface-card ${hover ? "card-hover" : ""} ${
-        fill ? "ui-card-fill" : ""
-      } ${scroll ? "ui-scroll" : ""} ${className}`}
+      className={`${variants[variant] || variants.default} ${
+        hover ? "card-hover" : ""
+      } ${fill ? "h-full" : ""} ${scroll ? "scroll-panel" : ""} ${className}`}
     >
       {children}
-    </div>
+    </section>
   );
 }

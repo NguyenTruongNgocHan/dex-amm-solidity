@@ -1,6 +1,7 @@
 import { LayoutDashboard } from "lucide-react";
 import PageHero from "../../components/common/PageHero";
 import StatusBanner from "../../components/common/StatusBanner";
+import PageContainer from "../../components/layout/PageContainer";
 import PoolAnalyticsCard from "./PoolAnalyticsCard";
 import WalletOverviewCard from "./WalletOverviewCard";
 import LPPositionCard from "./LPPositionCard";
@@ -15,13 +16,13 @@ export default function DashboardLayout({ wallet, amm, activity }) {
   const connected = Boolean(wallet.address);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-6">
+    <PageContainer>
       <PageHero
         badge="AMM Command Center"
         icon={<LayoutDashboard size={14} />}
         title="Monitor the full"
         highlight="DEX system"
-        description="A unified dashboard for pool reserves, wallet balances, LP ownership, system-wide activity, and off-chain IPFS documents."
+        description="Track reserves, wallet balances, LP ownership, system activity, and IPFS evidence from one production-ready dashboard."
         action={
           <Button
             variant={connected ? "secondary" : "primary"}
@@ -40,9 +41,11 @@ export default function DashboardLayout({ wallet, amm, activity }) {
         ]}
       />
 
-      <StatusBanner message={showStatus} className="mt-5" />
+      <div className="mt-4">
+        <StatusBanner message={showStatus} />
+      </div>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-12 xl:items-stretch">
+      <section className="mt-6 grid gap-5 xl:grid-cols-12">
         <div className="xl:col-span-4">
           <PoolAnalyticsCard ammData={amm.data} loading={amm.loading} />
         </div>
@@ -74,16 +77,16 @@ export default function DashboardLayout({ wallet, amm, activity }) {
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
             title="Recent System Activity"
-            description="A unified timeline for swaps, liquidity operations, LP staking, and rewards."
+            description="A unified timeline for swaps, liquidity operations, staking, and rewards."
             scroll
             maxHeight="360px"
           />
         </div>
-      </section>
 
-      <section className="mt-6">
-        <IPFSPanelCard walletAddress={wallet.address} />
+        <div className="xl:col-span-12">
+          <IPFSPanelCard walletAddress={wallet.address} />
+        </div>
       </section>
-    </main>
+    </PageContainer>
   );
 }

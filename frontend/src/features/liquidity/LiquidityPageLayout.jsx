@@ -2,6 +2,8 @@ import AddLiquidityCard from "./AddLiquidityCard";
 import PoolSummaryCard from "./PoolSummaryCard";
 import PositionCard from "./PositionCard";
 import RemoveLiquidityCard from "./RemoveLiquidityCard";
+import SystemActivityCard from "../activity/SystemActivityCard";
+import useSystemEvents from "../../hooks/useSystemEvents";
 
 export default function LiquidityPageLayout({
   ammData,
@@ -10,9 +12,16 @@ export default function LiquidityPageLayout({
   canAddLiquidity = true,
   lpPolicy,
 }) {
+  const activity = useSystemEvents(wallet.provider, 0, 6);
+
   return (
-    <section className="mt-6 grid items-stretch gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-      <div className="grid gap-5 xl:auto-rows-fr">
+    <section className="mt-6 grid gap-5 xl:grid-cols-12">
+      <aside className="grid gap-5 xl:col-span-3">
+        <PoolSummaryCard ammData={ammData} />
+        <PositionCard ammData={ammData} wallet={wallet} />
+      </aside>
+
+      <div className="xl:col-span-5">
         <AddLiquidityCard
           ammData={ammData}
           liquidity={liquidity}
@@ -21,7 +30,9 @@ export default function LiquidityPageLayout({
           disabled={!canAddLiquidity}
           lpPolicy={lpPolicy}
         />
+      </div>
 
+      <div className="xl:col-span-4">
         <RemoveLiquidityCard
           ammData={ammData}
           liquidity={liquidity}
@@ -30,10 +41,18 @@ export default function LiquidityPageLayout({
         />
       </div>
 
-      <aside className="grid gap-5 xl:grid-rows-[minmax(320px,1fr)_minmax(320px,1fr)]">
-        <PoolSummaryCard ammData={ammData} />
-        <PositionCard ammData={ammData} wallet={wallet} />
-      </aside>
+      <div className="xl:col-span-12">
+        <SystemActivityCard
+          events={activity.events}
+          allEvents={activity.allEvents}
+          loading={activity.loading}
+          onRefresh={activity.reloadEvents}
+          title="Liquidity Activity Timeline"
+          description="On-chain liquidity operations, swaps, staking, and reward actions."
+          scroll
+          maxHeight="360px"
+        />
+      </div>
     </section>
   );
 }

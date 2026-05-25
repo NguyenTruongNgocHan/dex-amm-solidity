@@ -10,6 +10,7 @@ import AppShell from "../components/layout/AppShell";
 import PageContainer from "../components/layout/PageContainer";
 import SurfaceCard from "../components/common/SurfaceCard";
 import Button from "../components/common/Button";
+import PageHero from "../components/common/PageHero";
 import useAdminControls, {
   ROLE_KEYS,
   ROLE_LABELS,
@@ -39,33 +40,27 @@ export default function AdminPage({ onNavigate, wallet }) {
       wallet={wallet}
     >
       <PageContainer>
-        <div className="mb-6 rounded-[28px] bg-gradient-to-br from-slate-950 to-slate-800 p-7 text-white shadow-xl shadow-slate-950/20">
-          <div className="flex flex-wrap items-start justify-between gap-5">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-teal-200">
-                <ShieldCheck size={14} />
-                Production Control Layer
-              </div>
-
-              <h1 className="mt-4 text-3xl font-black">
-                Admin · Operator · Auditor
-              </h1>
-
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-                This panel demonstrates role-based access control for the DEX.
-                Admin manages permissions, Operator controls trading operations,
-                and Auditor records audit evidence without touching user funds.
-              </p>
-            </div>
-
-            <div className="rounded-2xl bg-white/10 px-4 py-3 text-sm">
-              <div className="text-slate-400">Connected wallet</div>
-              <div className="mt-1 font-bold">
-                {wallet.address ? shortAddress(wallet.address) : "Not connected"}
-              </div>
-            </div>
-          </div>
-        </div>
+        <PageHero
+          badge="Production Control Layer"
+          icon={<ShieldCheck size={14} />}
+          title="Admin, Operator and"
+          highlight="Auditor governance"
+          description="Manage roles, emergency controls, token whitelist, verified liquidity provider policy, and audit evidence without touching user funds."
+          stats={[
+            {
+              label: "Connected wallet",
+              value: wallet.address ? shortAddress(wallet.address) : "Not connected",
+            },
+            {
+              label: "AMM status",
+              value: admin.ammState?.paused ? "Paused" : "Active",
+            },
+            {
+              label: "Trading",
+              value: admin.ammState?.tradingEnabled ? "Enabled" : "Disabled",
+            },
+          ]}
+        />
 
         {admin.status ? (
           <div className="mb-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)]">

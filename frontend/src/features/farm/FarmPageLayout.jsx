@@ -8,12 +8,10 @@ export default function FarmPageLayout({
   activity,
 }) {
   return (
-    <section className="mt-6 grid gap-5 xl:grid-cols-12 xl:items-stretch">
-      <div className="h-full xl:col-span-4">{position}</div>
-
-      <div className="h-full xl:col-span-4">{stake}</div>
-
-      <div className="h-full xl:col-span-4">{reward}</div>
+    <section className="mt-6 grid gap-5 xl:grid-cols-12">
+      <div className="xl:col-span-4">{position}</div>
+      <div className="xl:col-span-4">{stake}</div>
+      <div className="xl:col-span-4">{reward}</div>
 
       <div className="xl:col-span-4">{explain}</div>
 

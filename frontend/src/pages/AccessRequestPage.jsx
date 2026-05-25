@@ -6,7 +6,8 @@ import SurfaceCard from "../components/common/SurfaceCard";
 import Button from "../components/common/Button";
 import useAccessProfile from "../hooks/useAccessProfile";
 import { getAMM } from "../lib/contracts";
-
+import { UserCheck } from "lucide-react";
+import PageHero from "../components/common/PageHero";
 export default function AccessRequestPage({ onNavigate, wallet }) {
   const access = useAccessProfile(wallet);
 
@@ -58,14 +59,27 @@ export default function AccessRequestPage({ onNavigate, wallet }) {
       wallet={wallet}
     >
       <PageContainer>
-        <div className="mb-6 rounded-[28px] bg-gradient-to-br from-slate-950 to-slate-800 p-7 text-white">
-          <h1 className="text-3xl font-black">Verified LP Registration</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-            Swap remains permissionless. This request is only for wallets that
-            want to become verified liquidity providers when production policy
-            mode is enabled.
-          </p>
-        </div>
+        <PageHero
+          badge="Verified LP Registration"
+          icon={<UserCheck size={14} />}
+          title="Request verified"
+          highlight="liquidity access"
+          description="Swap remains permissionless. This request is only for wallets that want to become verified liquidity providers when production policy mode is enabled."
+          stats={[
+            {
+              label: "Current wallet",
+              value: wallet.address ? "Connected" : "Not connected",
+            },
+            {
+              label: "Profile hash",
+              value: "Stored on-chain",
+            },
+            {
+              label: "Evidence",
+              value: "IPFS URI",
+            },
+          ]}
+        />
 
         {status ? (
           <div className="mb-5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-semibold text-[var(--text)]">
