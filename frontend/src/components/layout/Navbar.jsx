@@ -16,6 +16,7 @@ import {
   UserCheck,
   Wallet,
   AlertTriangle,
+  Radar,
 } from "lucide-react";
 import Button from "../common/Button";
 import useTheme from "../../hooks/useTheme";
@@ -73,6 +74,13 @@ const trustCenterItems = [
     access: "trust",
   },
   {
+    key: "forensics",
+    label: "Forensics Center",
+    description: "Investigate whale swaps, liquidity drain, and reports.",
+    icon: <Radar size={15} />,
+    access: "trust",
+  },
+  {
     key: "evidence",
     label: "IPFS Evidence",
     description: "Receipts, token list, proposals, and audit reports.",
@@ -96,14 +104,18 @@ export default function Navbar({
   const roleLabel = profile.isAdmin
     ? "Admin"
     : profile.isOperator
-    ? "Operator"
-    : profile.isAuditor
-    ? "Auditor"
-    : profile.participantLabel;
+      ? "Operator"
+      : profile.isAuditor
+        ? "Auditor"
+        : profile.participantLabel;
 
-  const trustCenterActive = ["admin", "audit", "risk", "evidence"].includes(
-    currentPage
-  );
+  const trustCenterActive = [
+    "admin",
+    "audit",
+    "risk",
+    "forensics",
+    "evidence",
+  ].includes(currentPage);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -144,13 +156,12 @@ export default function Navbar({
         key={item.key}
         disabled={!allowed}
         onClick={() => allowed && handleNavigate(item.key)}
-        className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-black transition ${
-          active
+        className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-black transition ${active
             ? "bg-white text-slate-950 shadow-sm dark:bg-white dark:text-slate-950"
             : allowed
-            ? "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
-            : "cursor-not-allowed text-[var(--muted)] opacity-40"
-        }`}
+              ? "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
+              : "cursor-not-allowed text-[var(--muted)] opacity-40"
+          }`}
       >
         <span className={active ? "text-slate-950" : "text-[var(--primary)]"}>
           {allowed ? item.icon : <Lock size={14} />}
@@ -189,13 +200,12 @@ export default function Navbar({
               <button
                 disabled={!walletAddress}
                 onClick={() => walletAddress && setTrustOpen((prev) => !prev)}
-                className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-black transition ${
-                  trustCenterActive
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-black transition ${trustCenterActive
                     ? "bg-white text-slate-950 shadow-sm dark:bg-white dark:text-slate-950"
                     : walletAddress
-                    ? "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
-                    : "cursor-not-allowed text-[var(--muted)] opacity-40"
-                }`}
+                      ? "text-[var(--muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]"
+                      : "cursor-not-allowed text-[var(--muted)] opacity-40"
+                  }`}
               >
                 <span
                   className={
@@ -234,11 +244,10 @@ export default function Navbar({
                           key={item.key}
                           disabled={!allowed}
                           onClick={() => allowed && handleNavigate(item.key)}
-                          className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ${
-                            allowed
+                          className={`flex items-start gap-3 rounded-2xl p-3 text-left transition ${allowed
                               ? "hover:bg-[var(--surface-soft)]"
                               : "cursor-not-allowed opacity-45"
-                          }`}
+                            }`}
                         >
                           <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-[var(--primary-border)] bg-[var(--primary-soft)] text-[var(--primary-dark)]">
                             {allowed ? item.icon : <Lock size={15} />}

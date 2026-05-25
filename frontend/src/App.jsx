@@ -9,6 +9,7 @@ import AccessRequestPage from "./pages/AccessRequestPage";
 import EvidencePage from "./pages/EvidencePage";
 import AuditPage from "./pages/AuditPage";
 import RiskMonitorPage from "./pages/RiskMonitorPage";
+import ForensicsPage from "./pages/ForensicsPage";
 import useWallet from "./hooks/useWallet";
 
 const PATH_TO_PAGE = {
@@ -20,6 +21,7 @@ const PATH_TO_PAGE = {
   "/admin": "admin",
   "/audit": "audit",
   "/risk-monitor": "risk",
+  "/forensics": "forensics",
   "/evidence": "evidence",
   "/access": "access",
 };
@@ -33,6 +35,7 @@ const PAGE_TO_PATH = {
   admin: "/admin",
   audit: "/audit",
   risk: "/risk-monitor",
+  forensics: "/forensics",
   evidence: "/evidence",
   access: "/access",
 };
@@ -89,6 +92,7 @@ function App() {
   if (page === "admin") return <AdminPage {...commonProps} />;
   if (page === "audit") return <AuditPage {...commonProps} />;
   if (page === "risk") return <RiskMonitorPage {...commonProps} />;
+  if (page === "forensics") return <ForensicsPage {...commonProps} />;
   if (page === "evidence") return <EvidencePage {...commonProps} />;
   if (page === "access") return <AccessRequestPage {...commonProps} />;
 
