@@ -1,78 +1,98 @@
-import { AlertTriangle, ShieldAlert } from "lucide-react";
-import { useMemo } from "react";
+import { ShieldAlert } from "lucide-react";
+import { useMemo, useState } from "react";
 import AppShell from "../components/layout/AppShell";
 import PageContainer from "../components/layout/PageContainer";
 import PageHero from "../components/common/PageHero";
 import SurfaceCard from "../components/common/SurfaceCard";
 import useSystemEvents from "../hooks/useSystemEvents";
+import useAMMData from "../hooks/useAMMData";
 
-function classifyRisk(event) {
-  const primaryNumber = Number(
-    String(event.primary || "0").replace(/,/g, "").split(" ")[0]
-  );
-
-  if (event.type === "SWAP" && primaryNumber >= 1000) {
-    return {
-      level: "Suspicious",
-      reason: "Large swap size compared with demo pool scale.",
-    };
-  }
-
-  if (event.type === "SWAP" && primaryNumber >= 300) {
-    return {
-      level: "Warning",
-      reason: "Medium-to-large swap. Auditor should inspect price impact.",
-    };
-  }
-
-  if (["ADD", "REMOVE"].includes(event.type) && primaryNumber >= 1000) {
-    return {
-      level: "Warning",
-      reason: "Large liquidity movement can significantly change pool depth.",
-    };
-  }
-
-  return {
-    level: "Normal",
-    reason: "No rule-based anomaly detected.",
-  };
-}
-
-function levelClass(level) {
-  if (level === "Suspicious") {
-    return "border-red-300 bg-red-500/10 text-red-500";
-  }
-
-  if (level === "Warning") {
-    return "border-amber-300 bg-amber-500/10 text-amber-500";
-  }
-
-  return "border-emerald-300 bg-emerald-500/10 text-emerald-500";
-}
+import RiskFilterBar from "../features/risk/components/RiskFilterBar";
+import RiskRuleExplainer from "../features/risk/components/RiskRuleExplainer";
+import RiskSummaryStrip from "../features/risk/components/RiskSummaryStrip";
+import RiskTransactionCard from "../features/risk/components/RiskTransactionCard";
+import {
+  clearFailedTransactions,
+  getFailedTransactions,
+} from "../features/risk/utils/failedTransactions";
+import { classifyRisk } from "../features/risk/utils/riskRules";
 
 export default function RiskMonitorPage({
   onNavigate,
   wallet,
   activityRefreshKey,
 }) {
-  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 80);
+  const activity = useSystemEvents(wallet.provider, activityRefreshKey, 120);
+  const amm = useAMMData(wallet.provider, wallet.address);
+
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [failedRefreshKey, setFailedRefreshKey] = useState(0);
+
+  const failedTransactions = useMemo(() => {
+    failedRefreshKey;
+    return getFailedTransactions();
+  }, [failedRefreshKey]);
 
   const riskRows = useMemo(() => {
-    return activity.allEvents.map((event) => ({
+    const onChainRows = activity.allEvents.map((event) => ({
       ...event,
-      risk: classifyRisk(event),
+      risk: classifyRisk(event, amm.data),
     }));
-  }, [activity.allEvents]);
+
+    const failedRows = failedTransactions.map((event) => ({
+      ...event,
+      title: event.title || "Failed Transaction Attempt",
+      user: event.user || "Local wallet",
+      primary: event.amountIn || "N/A",
+      secondary: event.reason || "Failed",
+      risk: classifyRisk(event, amm.data),
+    }));
+
+    return [...failedRows, ...onChainRows];
+  }, [activity.allEvents, failedTransactions, amm.data]);
+
+  const filteredRows = useMemo(() => {
+    const keyword = query.trim().toLowerCase();
+
+    return riskRows.filter((row) => {
+      const filterMatched = filter === "All" || row.risk.level === filter;
+
+      const queryMatched =
+        !keyword ||
+        [
+          row.type,
+          row.title,
+          row.txHash,
+          row.user,
+          row.primary,
+          row.secondary,
+          row.risk.level,
+          ...(row.risk.reasons || []),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(keyword);
+
+      return filterMatched && queryMatched;
+    });
+  }, [riskRows, filter, query]);
 
   const summary = useMemo(() => {
     return riskRows.reduce(
       (acc, row) => {
+        acc.total += 1;
         acc[row.risk.level] += 1;
         return acc;
       },
-      { Normal: 0, Warning: 0, Suspicious: 0 }
+      { total: 0, Normal: 0, Warning: 0, Suspicious: 0 }
     );
   }, [riskRows]);
+
+  function handleClearFailed() {
+    clearFailedTransactions();
+    setFailedRefreshKey((prev) => prev + 1);
+  }
 
   return (
     <AppShell
@@ -88,7 +108,7 @@ export default function RiskMonitorPage({
           icon={<ShieldAlert size={14} />}
           title="Detect suspicious"
           highlight="DEX activity"
-          description="Rule-based monitoring for abnormal swaps, large liquidity movements, and transaction patterns that deserve auditor attention."
+          description="Rule-based risk monitoring for abnormal swaps, large liquidity movements, failed attempts, and incomplete evidence."
           stats={[
             { label: "Normal", value: summary.Normal },
             { label: "Warning", value: summary.Warning },
@@ -96,67 +116,33 @@ export default function RiskMonitorPage({
           ]}
         />
 
+        <div className="mt-6">
+          <RiskSummaryStrip summary={summary} />
+        </div>
+
         <SurfaceCard className="mt-6 p-5">
-          <div className="flex items-start gap-3 rounded-2xl border border-amber-300/40 bg-amber-500/10 p-4 text-sm text-amber-600">
-            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-            <div>
-              <div className="font-black">Rule-based detection only</div>
-              <div className="mt-1 text-xs font-semibold">
-                The monitor does not accuse users of fraud. It flags risky
-                patterns for human auditor review.
-              </div>
-            </div>
+          <RiskRuleExplainer />
+
+          <div className="mt-5">
+            <RiskFilterBar
+              query={query}
+              setQuery={setQuery}
+              filter={filter}
+              setFilter={setFilter}
+              onClearFailed={handleClearFailed}
+            />
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--border)]">
-            <div className="grid grid-cols-[120px_130px_1fr_1fr_1.5fr] border-b border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3 text-xs font-black uppercase tracking-wide text-[var(--muted)]">
-              <div>Risk</div>
-              <div>Type</div>
-              <div>Tx Hash</div>
-              <div>Actor</div>
-              <div>Reason</div>
-            </div>
-
-            <div className="max-h-[560px] overflow-y-auto">
-              {activity.loading ? (
-                <EmptyRow text="Loading risk monitor..." />
-              ) : riskRows.length === 0 ? (
-                <EmptyRow text="No on-chain activity available." />
-              ) : (
-                riskRows.map((row) => (
-                  <div
-                    key={row.id}
-                    className="grid grid-cols-[120px_130px_1fr_1fr_1.5fr] items-center border-b border-[var(--border)] px-4 py-3 text-sm last:border-b-0"
-                  >
-                    <div>
-                      <span
-                        className={`rounded-full border px-2 py-1 text-[11px] font-black ${levelClass(
-                          row.risk.level
-                        )}`}
-                      >
-                        {row.risk.level}
-                      </span>
-                    </div>
-
-                    <div className="font-black text-[var(--text)]">
-                      {row.type}
-                    </div>
-
-                    <div className="truncate font-mono text-xs font-bold text-[var(--text)]">
-                      {row.txHash}
-                    </div>
-
-                    <div className="font-bold text-[var(--text)]">
-                      {row.user || "Protocol"}
-                    </div>
-
-                    <div className="text-xs font-semibold text-[var(--muted)]">
-                      {row.risk.reason}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+          <div className="mt-5 grid gap-4">
+            {activity.loading ? (
+              <EmptyState text="Loading on-chain activity..." />
+            ) : filteredRows.length === 0 ? (
+              <EmptyState text="No matching risk event found." />
+            ) : (
+              filteredRows.map((row) => (
+                <RiskTransactionCard key={row.id} row={row} />
+              ))
+            )}
           </div>
         </SurfaceCard>
       </PageContainer>
@@ -164,10 +150,12 @@ export default function RiskMonitorPage({
   );
 }
 
-function EmptyRow({ text }) {
+function EmptyState({ text }) {
   return (
-    <div className="px-4 py-10 text-center text-sm font-bold text-[var(--muted)]">
-      {text}
+    <div className="empty-state min-h-[220px]">
+      <div className="text-center text-sm font-bold text-[var(--muted)]">
+        {text}
+      </div>
     </div>
   );
 }

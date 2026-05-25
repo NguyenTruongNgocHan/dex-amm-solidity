@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getAMM, getTokenA, getTokenB } from "../lib/contracts";
 import { CONTRACTS, SYMBOLS } from "../config/contracts";
 import { parseToken, formatToken } from "../lib/format";
+import { saveFailedTransaction } from "../features/risk/utils/failedTransactions";
 import {
   createTradeReceipt,
   evidenceURIFromCid,
@@ -164,6 +165,16 @@ export default function useTradeActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
+
+      saveFailedTransaction({
+        title: `Failed ${SYMBOLS.tokenA} → ${SYMBOLS.tokenB} Swap`,
+        user: signer ? await signer.getAddress().catch(() => "") : "",
+        amountIn,
+        tokenIn: SYMBOLS.tokenA,
+        tokenOut: SYMBOLS.tokenB,
+        reason: getErrorMessage(error, "Swap failed."),
+      });
+
       setStatus?.(getErrorMessage(error, "Swap failed."));
     } finally {
       setPending(false);
@@ -249,6 +260,16 @@ export default function useTradeActions(signer, reload, setStatus) {
       await reload?.();
     } catch (error) {
       console.error(error);
+
+      saveFailedTransaction({
+        title: `Failed ${SYMBOLS.tokenB} → ${SYMBOLS.tokenA} Swap`,
+        user: signer ? await signer.getAddress().catch(() => "") : "",
+        amountIn,
+        tokenIn: SYMBOLS.tokenB,
+        tokenOut: SYMBOLS.tokenA,
+        reason: getErrorMessage(error, "Swap failed."),
+      });
+
       setStatus?.(getErrorMessage(error, "Swap failed."));
     } finally {
       setPending(false);

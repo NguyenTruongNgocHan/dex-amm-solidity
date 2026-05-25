@@ -79,52 +79,60 @@ function mapSwapEvent(log) {
   const symbolIn = tokenSymbol(args.tokenIn);
   const symbolOut = tokenSymbol(args.tokenOut);
 
+  const amountInLabel = safeFormat(args.amountIn, 6);
+  const amountOutLabel = safeFormat(args.amountOut, 6);
+
   return createActivity(log, {
     type: "SWAP",
     title: "Swap Tokens",
     user: shortAddress(args.trader),
-    primary: `${safeFormat(args.amountIn)} ${symbolIn}`,
-    secondary: `${safeFormat(args.amountOut)} ${symbolOut}`,
-    description: `${shortAddress(args.trader)} swapped ${safeFormat(
-      args.amountIn,
-      6
-    )} ${symbolIn} for ${safeFormat(args.amountOut, 6)} ${symbolOut}.`,
+    tokenIn: args.tokenIn,
+    tokenOut: args.tokenOut,
+    tokenInSymbol: symbolIn,
+    tokenOutSymbol: symbolOut,
+    amountInRaw: args.amountIn,
+    amountOutRaw: args.amountOut,
+    amountInNumber: Number(amountInLabel.replaceAll(",", "")),
+    amountOutNumber: Number(amountOutLabel.replaceAll(",", "")),
+    primary: `${amountInLabel} ${symbolIn}`,
+    secondary: `${amountOutLabel} ${symbolOut}`,
+    description: `${shortAddress(args.trader)} swapped ${amountInLabel} ${symbolIn} for ${amountOutLabel} ${symbolOut}.`,
   });
 }
 
 function mapAddLiquidityEvent(log) {
   const args = log.args;
 
+  const amountALabel = safeFormat(args.amountA, 6);
+  const amountBLabel = safeFormat(args.amountB, 6);
+
   return createActivity(log, {
     type: "ADD",
     title: "Add Liquidity",
     user: shortAddress(args.provider),
-    primary: `${safeFormat(args.amountA)} ${SYMBOLS.tokenA}`,
-    secondary: `${safeFormat(args.amountB)} ${SYMBOLS.tokenB}`,
-    description: `${shortAddress(args.provider)} added ${safeFormat(
-      args.amountA,
-      6
-    )} ${SYMBOLS.tokenA} and ${safeFormat(args.amountB, 6)} ${
-      SYMBOLS.tokenB
-    }, receiving ${safeFormat(args.liquidityMinted, 6)} ${SYMBOLS.lpToken}.`,
+    amountInNumber: Number(amountALabel.replaceAll(",", "")),
+    amountOutNumber: Number(amountBLabel.replaceAll(",", "")),
+    primary: `${amountALabel} ${SYMBOLS.tokenA}`,
+    secondary: `${amountBLabel} ${SYMBOLS.tokenB}`,
+    description: `${shortAddress(args.provider)} added ${amountALabel} ${SYMBOLS.tokenA} and ${amountBLabel} ${SYMBOLS.tokenB}, receiving ${safeFormat(args.liquidityMinted, 6)} ${SYMBOLS.lpToken}.`,
   });
 }
 
 function mapRemoveLiquidityEvent(log) {
   const args = log.args;
 
+  const amountALabel = safeFormat(args.amountA, 6);
+  const amountBLabel = safeFormat(args.amountB, 6);
+
   return createActivity(log, {
     type: "REMOVE",
     title: "Remove Liquidity",
     user: shortAddress(args.provider),
-    primary: `${safeFormat(args.amountA)} ${SYMBOLS.tokenA}`,
-    secondary: `${safeFormat(args.amountB)} ${SYMBOLS.tokenB}`,
-    description: `${shortAddress(args.provider)} burned ${safeFormat(
-      args.liquidityBurned,
-      6
-    )} ${SYMBOLS.lpToken} and received ${safeFormat(args.amountA, 6)} ${
-      SYMBOLS.tokenA
-    } plus ${safeFormat(args.amountB, 6)} ${SYMBOLS.tokenB}.`,
+    amountInNumber: Number(amountALabel.replaceAll(",", "")),
+    amountOutNumber: Number(amountBLabel.replaceAll(",", "")),
+    primary: `${amountALabel} ${SYMBOLS.tokenA}`,
+    secondary: `${amountBLabel} ${SYMBOLS.tokenB}`,
+    description: `${shortAddress(args.provider)} burned ${safeFormat(args.liquidityBurned, 6)} ${SYMBOLS.lpToken} and received ${amountALabel} ${SYMBOLS.tokenA} plus ${amountBLabel} ${SYMBOLS.tokenB}.`,
   });
 }
 
