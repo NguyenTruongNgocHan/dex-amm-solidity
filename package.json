@@ -13,7 +13,9 @@
     "clean": "hardhat clean",
     "frontend:install": "cd frontend && npm install",
     "frontend:dev": "cd frontend && npm run dev",
-    "frontend:build": "cd frontend && npm run build"
+    "frontend:build": "cd frontend && npm run build",
+    "seed:demo": "hardhat run scripts/seed-demo-data.js --network localhost",
+    "check:evidence": "hardhat run scripts/check-evidence-anchor.js --network localhost"
   },
   "keywords": [
     "blockchain",

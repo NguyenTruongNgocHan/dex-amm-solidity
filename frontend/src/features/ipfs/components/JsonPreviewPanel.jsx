@@ -9,22 +9,39 @@ export default function JsonPreviewPanel({ lastUpload, retrievedJson }) {
         <section className="mt-5 rounded-3xl border border-[var(--primary-border)] bg-[var(--primary-soft)] p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="dex-chip">Last Upload</div>
+              <div className="dex-chip">Last Real IPFS Upload</div>
               <p className="mt-3 text-lg font-black text-[var(--text)]">
                 {lastUpload.type}
               </p>
+
               <p className="mt-1 break-all text-sm text-[var(--muted)]">
                 CID: {lastUpload.cid}
               </p>
+
               <p className="mt-1 text-xs font-semibold text-[var(--muted)]">
-                Mode: {lastUpload.mode}
+                Provider: {lastUpload.provider || "Pinata"} · Mode:{" "}
+                {lastUpload.mode}
               </p>
+
+              {lastUpload.url ? (
+                <p className="mt-1 break-all text-xs font-semibold text-[var(--muted)]">
+                  Gateway: {lastUpload.url}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" onClick={() => copyText(lastUpload.cid)}>
                 <Copy size={15} />
                 Copy CID
+              </Button>
+
+              <Button
+                variant="ghost"
+                onClick={() => copyText(`ipfs://${lastUpload.cid}`)}
+              >
+                <Copy size={15} />
+                Copy IPFS URI
               </Button>
 
               <Button

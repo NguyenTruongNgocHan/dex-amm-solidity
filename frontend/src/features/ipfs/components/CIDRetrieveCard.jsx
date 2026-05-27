@@ -12,11 +12,12 @@ export default function CIDRetrieveCard({ cid, setCid, onRetrieve }) {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-black text-[var(--text)]">Retrieve by CID</h3>
-            <span className="dex-chip">Lookup</span>
+            <span className="dex-chip">IPFS Lookup</span>
           </div>
 
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-            Paste an IPFS or local CID to retrieve the original JSON document.
+            Paste a CID, an <b>ipfs://</b> URI, or a Pinata gateway URL to
+            retrieve the original JSON document.
           </p>
         </div>
       </div>
@@ -26,7 +27,7 @@ export default function CIDRetrieveCard({ cid, setCid, onRetrieve }) {
           value={cid}
           onChange={(event) => setCid(event.target.value)}
           className="input-shell px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
-          placeholder="Paste CID here"
+          placeholder="CID / ipfs://CID / gateway URL"
         />
 
         <Button onClick={onRetrieve}>

@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, Database, FileJson } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Cloud,
+  Database,
+  FileJson,
+} from "lucide-react";
 
 import SurfaceCard from "../../components/common/SurfaceCard";
 import { CONTRACTS, SYMBOLS } from "../../config/contracts";
@@ -7,6 +13,7 @@ import { getAMM } from "../../lib/contracts";
 import {
   createGovernanceProposal,
   createTokenList,
+  getIPFSRuntimeStatus,
   getTradeReceipts,
   retrieveJsonFromIPFS,
   uploadJsonToIPFS,
@@ -27,6 +34,8 @@ import {
 
 export default function IPFSPanelCard({ wallet }) {
   const walletAddress = wallet?.address;
+  const ipfsRuntime = getIPFSRuntimeStatus();
+
   const [cid, setCid] = useState("");
   const [status, setStatus] = useState("");
   const [retrievedJson, setRetrievedJson] = useState(null);
@@ -46,7 +55,7 @@ export default function IPFSPanelCard({ wallet }) {
 
   async function handleUploadTokenList() {
     try {
-      setStatus("Uploading token list...");
+      setStatus("Uploading token list to Pinata IPFS...");
 
       const tokenList = createTokenList({
         tokenA: CONTRACTS.tokenA,
@@ -63,10 +72,12 @@ export default function IPFSPanelCard({ wallet }) {
         cid: upload.cid,
         url: upload.url,
         mode: upload.mode,
+        provider: upload.provider,
         content: tokenList,
       });
 
-      setStatus("Token list uploaded.");
+      setCid(upload.cid);
+      setStatus("Token list uploaded to real IPFS.");
     } catch (error) {
       console.error(error);
       setStatus(error.message || "Upload token list failed.");
@@ -75,7 +86,7 @@ export default function IPFSPanelCard({ wallet }) {
 
   async function handleUploadProposal() {
     try {
-      setStatus("Uploading governance proposal...");
+      setStatus("Uploading governance proposal to Pinata IPFS...");
 
       const proposal = createGovernanceProposal({
         title: proposalTitle,
@@ -94,10 +105,12 @@ export default function IPFSPanelCard({ wallet }) {
         cid: upload.cid,
         url: upload.url,
         mode: upload.mode,
+        provider: upload.provider,
         content: proposal,
       });
 
-      setStatus("Governance proposal uploaded.");
+      setCid(upload.cid);
+      setStatus("Governance proposal uploaded to real IPFS.");
     } catch (error) {
       console.error(error);
       setStatus(error.message || "Upload proposal failed.");
@@ -106,10 +119,10 @@ export default function IPFSPanelCard({ wallet }) {
 
   async function handleRetrieve() {
     try {
-      setStatus("Retrieving JSON from IPFS...");
+      setStatus("Retrieving JSON from IPFS gateway...");
       const json = await retrieveJsonFromIPFS(cid.trim());
       setRetrievedJson(json);
-      setStatus("CID retrieved successfully.");
+      setStatus("CID retrieved successfully from IPFS.");
     } catch (error) {
       console.error(error);
       setRetrievedJson(null);
@@ -230,9 +243,9 @@ export default function IPFSPanelCard({ wallet }) {
               IPFS Evidence Center
             </h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              Store token lists, governance proposals, and trade receipts
-              off-chain. Anchored receipts can be verified against on-chain
-              content hashes.
+              Store token lists, governance proposals, and trade receipts on
+              Pinata IPFS. Receipts are later anchored on-chain by content hash
+              for independent verification.
             </p>
           </div>
         </div>
@@ -247,13 +260,51 @@ export default function IPFSPanelCard({ wallet }) {
         )}
       </div>
 
+      <section
+        className={`mt-5 rounded-3xl border p-4 ${
+          ipfsRuntime.mode === "production-ipfs"
+            ? "border-[var(--success-border)] bg-[var(--success-soft)]"
+            : "border-[var(--warning-border)] bg-[var(--warning-soft)]"
+        }`}
+      >
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--surface)] text-[var(--text)]">
+              {ipfsRuntime.mode === "production-ipfs" ? (
+                <Cloud size={18} />
+              ) : (
+                <AlertTriangle size={18} />
+              )}
+            </div>
+
+            <div>
+              <div className="text-sm font-black text-[var(--text)]">
+                IPFS Runtime: {ipfsRuntime.provider}
+              </div>
+              <p className="mt-1 break-all text-xs font-semibold text-[var(--muted)]">
+                Gateway: {ipfsRuntime.gateway}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-[var(--muted)]">
+                Mode: {ipfsRuntime.mode}
+              </p>
+            </div>
+          </div>
+
+          <div className="dex-chip">
+            {ipfsRuntime.hasPinataJwt
+              ? "Real IPFS Upload Enabled"
+              : "Missing VITE_PINATA_JWT"}
+          </div>
+        </div>
+      </section>
+
       <div className="mt-6 grid gap-5 xl:grid-cols-12">
         <div className="grid gap-5 xl:col-span-5">
           <IPFSActionCard
             icon={<FileJson size={18} />}
             title="Token List JSON"
             tag="Metadata"
-            description={`Upload supported token metadata for ${SYMBOLS.tokenA}, ${SYMBOLS.tokenB}, ${SYMBOLS.lpToken}, reward token, and AMM pair information.`}
+            description={`Upload supported token metadata for ${SYMBOLS.tokenA}, ${SYMBOLS.tokenB}, ${SYMBOLS.lpToken}, reward token, and AMM pair information to real IPFS.`}
             buttonText="Upload Token List"
             onClick={handleUploadTokenList}
           />

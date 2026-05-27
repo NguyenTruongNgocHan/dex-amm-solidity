@@ -4,6 +4,11 @@ import { createWalletHash } from "./privacy";
 
 const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
 const PINATA_ENDPOINT = "https://api.pinata.cloud/pinning/pinJSONToIPFS";
+const IPFS_GATEWAY =
+  import.meta.env.VITE_IPFS_GATEWAY_URL || "https://gateway.pinata.cloud/ipfs";
+const ENABLE_LOCAL_FALLBACK =
+  import.meta.env.VITE_ENABLE_LOCAL_IPFS_FALLBACK === "true";
+
 const LOCAL_IPFS_KEY = "dexck-local-ipfs-cache";
 const TRADE_RECEIPTS_KEY = "dexck-trade-receipts";
 
@@ -21,6 +26,20 @@ function writeLocalCache(cache) {
 
 function createLocalCid() {
   return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+export function getIPFSRuntimeStatus() {
+  return {
+    provider: PINATA_JWT ? "Pinata IPFS" : "Not configured",
+    gateway: IPFS_GATEWAY,
+    hasPinataJwt: Boolean(PINATA_JWT),
+    localFallbackEnabled: ENABLE_LOCAL_FALLBACK,
+    mode: PINATA_JWT
+      ? "production-ipfs"
+      : ENABLE_LOCAL_FALLBACK
+        ? "local-demo"
+        : "not-ready",
+  };
 }
 
 export function canonicalStringify(value) {
@@ -50,20 +69,51 @@ export function subjectFromTxHash(txHash) {
   return txHash;
 }
 
+export function normalizeCid(input) {
+  const value = String(input || "").trim();
+
+  if (!value) return "";
+
+  if (value.startsWith("ipfs://")) {
+    return value.replace("ipfs://", "").replace(/^ipfs\//, "");
+  }
+
+  if (value.includes("/ipfs/")) {
+    return value.split("/ipfs/")[1].split("?")[0].split("#")[0];
+  }
+
+  return value;
+}
+
 export function evidenceURIFromCid(cid) {
-  if (!cid) return "";
-  if (cid.startsWith("local-")) return `local://${cid}`;
-  return `ipfs://${cid}`;
+  const normalizedCid = normalizeCid(cid);
+
+  if (!normalizedCid) return "";
+  if (normalizedCid.startsWith("local-")) return `local://${normalizedCid}`;
+
+  return `ipfs://${normalizedCid}`;
 }
 
 export function getGatewayUrl(cid) {
-  if (!cid) return "";
-  if (cid.startsWith("local-")) return "";
-  return `https://gateway.pinata.cloud/ipfs/${cid}`;
+  const normalizedCid = normalizeCid(cid);
+
+  if (!normalizedCid || normalizedCid.startsWith("local-")) return "";
+
+  return `${IPFS_GATEWAY.replace(/\/$/, "")}/${normalizedCid}`;
 }
 
 export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
+  if (!content || typeof content !== "object") {
+    throw new Error("Only JSON objects can be uploaded to the evidence layer.");
+  }
+
   if (!PINATA_JWT) {
+    if (!ENABLE_LOCAL_FALLBACK) {
+      throw new Error(
+        "Pinata is not configured. Add VITE_PINATA_JWT to .env to upload real IPFS evidence."
+      );
+    }
+
     const cid = createLocalCid();
     const cache = readLocalCache();
 
@@ -73,7 +123,8 @@ export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
       content,
       createdAt: new Date().toISOString(),
       mode: "local-demo",
-      note: "Local fallback is used when VITE_PINATA_JWT is not configured. Production mode should use Pinata/IPFS gateway.",
+      warning:
+        "This is local fallback only. It is not IPFS and must not be used for final demo.",
     };
 
     writeLocalCache(cache);
@@ -82,6 +133,7 @@ export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
       cid,
       url: "",
       mode: "local-demo",
+      provider: "localStorage",
     };
   }
 
@@ -92,8 +144,17 @@ export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
       Authorization: `Bearer ${PINATA_JWT}`,
     },
     body: JSON.stringify({
+      pinataOptions: {
+        cidVersion: 1,
+      },
       pinataMetadata: {
         name,
+        keyvalues: {
+          project: "DEXCK-AMM",
+          course: "IS355",
+          evidenceLayer: "IPFS",
+          createdAt: new Date().toISOString(),
+        },
       },
       pinataContent: content,
     }),
@@ -101,24 +162,37 @@ export async function uploadJsonToIPFS(content, name = "dexck-data.json") {
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || "Upload to IPFS failed.");
+    throw new Error(message || "Upload to Pinata IPFS failed.");
   }
 
   const data = await response.json();
 
+  if (!data.IpfsHash) {
+    throw new Error("Pinata did not return an IPFS CID.");
+  }
+
   return {
     cid: data.IpfsHash,
     url: getGatewayUrl(data.IpfsHash),
-    mode: "pinata",
+    mode: "production-ipfs",
+    provider: "Pinata",
+    pinSize: data.PinSize,
+    timestamp: data.Timestamp,
   };
 }
 
-export async function retrieveJsonFromIPFS(cid) {
+export async function retrieveJsonFromIPFS(cidOrUri) {
+  const cid = normalizeCid(cidOrUri);
+
   if (!cid) {
     throw new Error("CID is required.");
   }
 
   if (cid.startsWith("local-")) {
+    if (!ENABLE_LOCAL_FALLBACK) {
+      throw new Error("Local fallback is disabled. Use a real IPFS CID.");
+    }
+
     const cache = readLocalCache();
     const item = cache[cid];
 
@@ -129,7 +203,12 @@ export async function retrieveJsonFromIPFS(cid) {
     return item.content;
   }
 
-  const response = await fetch(getGatewayUrl(cid));
+  const response = await fetch(getGatewayUrl(cid), {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
 
   if (!response.ok) {
     throw new Error("Cannot retrieve JSON from IPFS gateway.");
@@ -140,12 +219,20 @@ export async function retrieveJsonFromIPFS(cid) {
 
 export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
   return {
+    type: "token-list",
     name: "DEXCK Token List",
-    description: "Supported tokens for DEXCK AMM production-like demo",
+    description:
+      "Supported ERC-20 tokens and AMM pool metadata for DEXCK production-like demo.",
     version: "1.0.0",
     timestamp: new Date().toISOString(),
     chainId: HARDHAT_CHAIN_ID,
     amm,
+    storage: {
+      layer: "IPFS",
+      provider: "Pinata",
+      purpose:
+        "Public token metadata for frontend rendering and independent audit.",
+    },
     tokens: [
       {
         chainId: HARDHAT_CHAIN_ID,
@@ -153,6 +240,7 @@ export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
         symbol: SYMBOLS.tokenA,
         decimals: 18,
         address: tokenA,
+        standard: "ERC-20",
         logoURI: "",
       },
       {
@@ -161,6 +249,7 @@ export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
         symbol: SYMBOLS.tokenB,
         decimals: 18,
         address: tokenB,
+        standard: "ERC-20",
         logoURI: "",
       },
       {
@@ -169,6 +258,7 @@ export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
         symbol: SYMBOLS.lpToken,
         decimals: 18,
         address: lpToken || "",
+        standard: "ERC-20 LP Token",
         logoURI: "",
       },
       {
@@ -177,6 +267,7 @@ export function createTokenList({ tokenA, tokenB, amm, lpToken, rewardToken }) {
         symbol: SYMBOLS.rewardToken,
         decimals: 18,
         address: rewardToken || "",
+        standard: "ERC-20 Reward Token",
         logoURI: "",
       },
     ].filter((token) => token.address),
@@ -197,7 +288,14 @@ export function createGovernanceProposal({
     proposedFeeBps,
     proposerHash: createWalletHash(proposer),
     createdAt: new Date().toISOString(),
-    note: "This proposal is stored on IPFS as off-chain governance documentation. Raw wallet address is not stored in this metadata.",
+    storage: {
+      layer: "IPFS",
+      provider: "Pinata",
+      purpose:
+        "Off-chain governance document. Hash/CID can be anchored on-chain for integrity.",
+    },
+    privacyNote:
+      "Raw wallet address is not stored in this proposal metadata. Only wallet hash is stored.",
   };
 }
 
@@ -234,6 +332,12 @@ export function createTradeReceipt({
     fee,
     contractAddress,
     createdAt: new Date().toISOString(),
+    storage: {
+      layer: "IPFS",
+      provider: "Pinata",
+      purpose:
+        "Human-readable trade receipt. Its content hash is anchored on-chain for verification.",
+    },
     privacyNote:
       "Raw wallet address is intentionally not stored in IPFS receipt. On-chain address remains public by Ethereum design; off-chain evidence stores only walletHash.",
   };
