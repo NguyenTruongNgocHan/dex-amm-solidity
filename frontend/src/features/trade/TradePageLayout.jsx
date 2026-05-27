@@ -54,7 +54,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
 
           <PoolInsightStrip ammData={amm.data} activity={activity} />
 
-          <PoolPriceChart ammData={amm.data} />
+          <PoolPriceChart ammData={amm.data} activity={activity} />
         </section>
 
         <aside className="flex min-h-[720px]">
