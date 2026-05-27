@@ -4,14 +4,66 @@ import {
   Copy,
   Droplets,
   ExternalLink,
+  Eye,
+  EyeOff,
   Gift,
   History,
   Layers,
   LogOut,
   RefreshCcw,
   Search,
+  ShieldCheck,
+  UserRound,
   X,
 } from "lucide-react";
+import useAccessProfile from "../../hooks/useAccessProfile";
+
+function sameAddress(a, b) {
+  return String(a || "").toLowerCase() === String(b || "").toLowerCase();
+}
+
+function canViewSystemWide(profile) {
+  return Boolean(profile?.isAdmin || profile?.isOperator || profile?.isAuditor);
+}
+
+function filterEventsByVisibility(events, walletAddress, profile) {
+  if (canViewSystemWide(profile)) return events;
+  if (!walletAddress) return [];
+
+  return events.filter((event) => sameAddress(event.actorAddress, walletAddress));
+}
+
+function getVisibilityMeta(profile, walletAddress) {
+  if (!walletAddress) {
+    return {
+      label: "Connect wallet",
+      description: "Connect wallet to view your own activity history.",
+      icon: <EyeOff size={14} />,
+      className:
+        "border-amber-300 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+    };
+  }
+
+  if (canViewSystemWide(profile)) {
+    return {
+      label: "System-wide Activity",
+      description:
+        "Admin, Operator, and Auditor can inspect all protocol activities.",
+      icon: <ShieldCheck size={14} />,
+      className:
+        "border-[var(--primary-border)] bg-[var(--primary-soft)] text-[var(--primary-dark)]",
+    };
+  }
+
+  return {
+    label: "My Activity Only",
+    description:
+      "Public users only see activities emitted by their connected wallet.",
+    icon: <UserRound size={14} />,
+    className:
+      "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--muted)]",
+  };
+}
 
 function getActivityMeta(type) {
   const map = {
@@ -49,6 +101,12 @@ function getActivityMeta(type) {
       color:
         "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-500/15 dark:text-fuchsia-300",
     },
+    EVIDENCE: {
+      icon: <ShieldCheck size={16} />,
+      label: "Evidence",
+      color:
+        "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300",
+    },
   };
 
   return (
@@ -76,7 +134,6 @@ function ActivityRow({ item }) {
   return (
     <article className="group rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-4 transition hover:border-[var(--primary)]/30 hover:bg-[var(--surface)]">
       <div className="flex items-start justify-between gap-4">
-        {/* LEFT */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
             <div
@@ -111,7 +168,6 @@ function ActivityRow({ item }) {
           </div>
         </div>
 
-        {/* RIGHT */}
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
             <div className="text-sm font-black text-[var(--text)]">
@@ -136,7 +192,7 @@ function ActivityRow({ item }) {
   );
 }
 
-function ActivityModal({ open, events, onClose }) {
+function ActivityModal({ open, events, visibilityMeta, onClose }) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("desc");
   const [type, setType] = useState("ALL");
@@ -185,12 +241,19 @@ function ActivityModal({ open, events, onClose }) {
         <header className="border-b border-[var(--border)] bg-[var(--surface-soft)] px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
+              <div
+                className={`mb-3 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black ${visibilityMeta.className}`}
+              >
+                {visibilityMeta.icon}
+                {visibilityMeta.label}
+              </div>
+
               <h2 className="text-2xl font-black text-[var(--text)]">
                 System Activity
               </h2>
+
               <p className="mt-1 text-sm text-[var(--muted)]">
-                On-chain timeline for swap, liquidity, farming, and reward
-                actions.
+                {visibilityMeta.description}
               </p>
             </div>
 
@@ -236,14 +299,15 @@ function ActivityModal({ open, events, onClose }) {
           </div>
 
           <div className="mt-3 text-xs font-bold text-[var(--muted)]">
-            Showing {filteredEvents.length} / {events.length} activities
+            Showing {filteredEvents.length} / {events.length} visible
+            activities
           </div>
         </header>
 
         <main className="custom-scrollbar flex-1 overflow-auto p-5">
           {filteredEvents.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] p-8 text-center text-sm text-[var(--muted)]">
-              No activity matched your search.
+              No activity matched your visibility scope or search.
             </div>
           ) : (
             <div className="space-y-3">
@@ -263,6 +327,7 @@ export default function SystemActivityCard({
   allEvents = [],
   loading,
   onRefresh,
+  wallet,
   title = "Recent System Activity",
   description = "On-chain history across swap, liquidity, farming, and reward actions.",
   compact = false,
@@ -270,14 +335,25 @@ export default function SystemActivityCard({
   maxHeight = "360px",
 }) {
   const [open, setOpen] = useState(false);
-  const visibleEvents = compact ? events.slice(0, 3) : events;
+  const { profile } = useAccessProfile(wallet);
+
+  const visibilityMeta = getVisibilityMeta(profile, wallet?.address);
+
+  const visibleEvents = useMemo(() => {
+    const sourceEvents = compact ? events.slice(0, 3) : events;
+    return filterEventsByVisibility(sourceEvents, wallet?.address, profile);
+  }, [compact, events, profile, wallet?.address]);
+
+  const visibleAllEvents = useMemo(() => {
+    return filterEventsByVisibility(allEvents, wallet?.address, profile);
+  }, [allEvents, profile, wallet?.address]);
 
   return (
     <>
       <section className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-soft)]">
         <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-[var(--primary-soft)] text-[var(--primary)]">
                 <History size={18} />
               </div>
@@ -285,10 +361,21 @@ export default function SystemActivityCard({
               <h2 className="text-lg font-black leading-tight text-[var(--text)]">
                 {title}
               </h2>
+
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black ${visibilityMeta.className}`}
+              >
+                {visibilityMeta.icon}
+                {visibilityMeta.label}
+              </span>
             </div>
 
             <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
               {description}
+            </p>
+
+            <p className="mt-1 text-xs font-semibold text-[var(--muted)]">
+              {visibilityMeta.description}
             </p>
           </div>
 
@@ -307,7 +394,7 @@ export default function SystemActivityCard({
               onClick={() => setOpen(true)}
               className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-bold text-[var(--text)] transition hover:-translate-y-0.5 hover:shadow-sm"
             >
-              View all
+              View visible
               <ExternalLink size={14} />
             </button>
           </div>
@@ -319,7 +406,7 @@ export default function SystemActivityCard({
           </div>
         ) : visibleEvents.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] p-6 text-center text-sm text-[var(--muted)]">
-            No activity yet.
+            No visible activity under current role scope.
           </div>
         ) : (
           <div
@@ -337,7 +424,8 @@ export default function SystemActivityCard({
 
       <ActivityModal
         open={open}
-        events={allEvents}
+        events={visibleAllEvents}
+        visibilityMeta={visibilityMeta}
         onClose={() => setOpen(false)}
       />
     </>

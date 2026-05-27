@@ -73,6 +73,7 @@ export default function TradePageLayout({ wallet, amm, trade, activity }) {
           allEvents={activity.allEvents}
           loading={activity.loading}
           onRefresh={activity.reloadEvents}
+          wallet={wallet}
           title="Trade Activity Timeline"
           description="On-chain timeline for swaps, liquidity updates, staking, and reward actions."
           scroll

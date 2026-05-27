@@ -89,6 +89,7 @@ export default function FarmPage({
           }
           explain={<FarmExplainCard />}
           activity={activity}
+          wallet={wallet}
         />
       </main>
     </AppShell>

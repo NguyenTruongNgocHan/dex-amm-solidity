@@ -449,6 +449,7 @@ export default function AdminPage({ onNavigate, wallet, activityRefreshKey }) {
               allEvents={activity.allEvents}
               loading={activity.loading}
               onRefresh={activity.reloadEvents}
+              wallet={wallet}
               title="Protocol Timeline"
               description="Track governance actions, trading events, staking updates, and administrative activity."
               scroll

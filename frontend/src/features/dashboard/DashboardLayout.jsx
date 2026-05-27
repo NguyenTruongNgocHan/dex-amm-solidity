@@ -68,6 +68,7 @@ export default function DashboardLayout({ wallet, amm, activity }) {
             allEvents={activity.allEvents}
             loading={activity.loading}
             onRefresh={activity.reloadEvents}
+            wallet={wallet}
             title="Recent System Activity"
             description="On-chain timeline for swaps, liquidity operations, staking, and rewards."
             scroll

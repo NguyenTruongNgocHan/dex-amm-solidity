@@ -52,6 +52,7 @@ export default function LiquidityPageLayout({
           allEvents={activity.allEvents}
           loading={activity.loading}
           onRefresh={activity.reloadEvents}
+          wallet={wallet}
           title="Liquidity Activity Timeline"
           description="On-chain liquidity operations, swaps, staking, and reward actions."
           scroll

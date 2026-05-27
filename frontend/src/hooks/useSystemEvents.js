@@ -56,19 +56,19 @@ function evidenceTypeLabel(value) {
 
 function mapEvidenceAnchoredEvent(log) {
   const args = log.args;
+  const actorAddress = args.submitter;
 
   return createActivity(log, {
     type: "EVIDENCE",
     title: "Evidence Anchored",
-    user: shortAddress(args.submitter),
+    actorAddress,
+    user: shortAddress(actorAddress),
     primary: evidenceTypeLabel(args.evidenceType),
     secondary: String(args.evidenceURI || ""),
     subject: args.subject,
     contentHash: args.contentHash,
     evidenceURI: args.evidenceURI,
-    description: `${shortAddress(
-      args.submitter
-    )} anchored ${evidenceTypeLabel(
+    description: `${shortAddress(actorAddress)} anchored ${evidenceTypeLabel(
       args.evidenceType
     )} with content hash ${String(args.contentHash).slice(0, 12)}...`,
   });
@@ -76,6 +76,7 @@ function mapEvidenceAnchoredEvent(log) {
 
 function mapSwapEvent(log) {
   const args = log.args;
+  const actorAddress = args.trader;
   const symbolIn = tokenSymbol(args.tokenIn);
   const symbolOut = tokenSymbol(args.tokenOut);
 
@@ -85,7 +86,8 @@ function mapSwapEvent(log) {
   return createActivity(log, {
     type: "SWAP",
     title: "Swap Tokens",
-    user: shortAddress(args.trader),
+    actorAddress,
+    user: shortAddress(actorAddress),
     tokenIn: args.tokenIn,
     tokenOut: args.tokenOut,
     tokenInSymbol: symbolIn,
@@ -96,12 +98,15 @@ function mapSwapEvent(log) {
     amountOutNumber: Number(amountOutLabel.replaceAll(",", "")),
     primary: `${amountInLabel} ${symbolIn}`,
     secondary: `${amountOutLabel} ${symbolOut}`,
-    description: `${shortAddress(args.trader)} swapped ${amountInLabel} ${symbolIn} for ${amountOutLabel} ${symbolOut}.`,
+    description: `${shortAddress(
+      actorAddress
+    )} swapped ${amountInLabel} ${symbolIn} for ${amountOutLabel} ${symbolOut}.`,
   });
 }
 
 function mapAddLiquidityEvent(log) {
   const args = log.args;
+  const actorAddress = args.provider;
 
   const amountALabel = safeFormat(args.amountA, 6);
   const amountBLabel = safeFormat(args.amountB, 6);
@@ -109,17 +114,23 @@ function mapAddLiquidityEvent(log) {
   return createActivity(log, {
     type: "ADD",
     title: "Add Liquidity",
-    user: shortAddress(args.provider),
+    actorAddress,
+    user: shortAddress(actorAddress),
     amountInNumber: Number(amountALabel.replaceAll(",", "")),
     amountOutNumber: Number(amountBLabel.replaceAll(",", "")),
     primary: `${amountALabel} ${SYMBOLS.tokenA}`,
     secondary: `${amountBLabel} ${SYMBOLS.tokenB}`,
-    description: `${shortAddress(args.provider)} added ${amountALabel} ${SYMBOLS.tokenA} and ${amountBLabel} ${SYMBOLS.tokenB}, receiving ${safeFormat(args.liquidityMinted, 6)} ${SYMBOLS.lpToken}.`,
+    description: `${shortAddress(
+      actorAddress
+    )} added ${amountALabel} ${SYMBOLS.tokenA} and ${amountBLabel} ${
+      SYMBOLS.tokenB
+    }, receiving ${safeFormat(args.liquidityMinted, 6)} ${SYMBOLS.lpToken}.`,
   });
 }
 
 function mapRemoveLiquidityEvent(log) {
   const args = log.args;
+  const actorAddress = args.provider;
 
   const amountALabel = safeFormat(args.amountA, 6);
   const amountBLabel = safeFormat(args.amountB, 6);
@@ -127,25 +138,34 @@ function mapRemoveLiquidityEvent(log) {
   return createActivity(log, {
     type: "REMOVE",
     title: "Remove Liquidity",
-    user: shortAddress(args.provider),
+    actorAddress,
+    user: shortAddress(actorAddress),
     amountInNumber: Number(amountALabel.replaceAll(",", "")),
     amountOutNumber: Number(amountBLabel.replaceAll(",", "")),
     primary: `${amountALabel} ${SYMBOLS.tokenA}`,
     secondary: `${amountBLabel} ${SYMBOLS.tokenB}`,
-    description: `${shortAddress(args.provider)} burned ${safeFormat(args.liquidityBurned, 6)} ${SYMBOLS.lpToken} and received ${amountALabel} ${SYMBOLS.tokenA} plus ${amountBLabel} ${SYMBOLS.tokenB}.`,
+    description: `${shortAddress(
+      actorAddress
+    )} burned ${safeFormat(args.liquidityBurned, 6)} ${
+      SYMBOLS.lpToken
+    } and received ${amountALabel} ${SYMBOLS.tokenA} plus ${amountBLabel} ${
+      SYMBOLS.tokenB
+    }.`,
   });
 }
 
 function mapStakeEvent(log) {
   const args = log.args;
+  const actorAddress = args.user;
 
   return createActivity(log, {
     type: "STAKE",
     title: "Stake LP",
-    user: shortAddress(args.user),
+    actorAddress,
+    user: shortAddress(actorAddress),
     primary: `${safeFormat(args.amount)} ${SYMBOLS.lpToken}`,
     secondary: "Farm deposit",
-    description: `${shortAddress(args.user)} staked ${safeFormat(
+    description: `${shortAddress(actorAddress)} staked ${safeFormat(
       args.amount,
       6
     )} ${SYMBOLS.lpToken} to earn ${SYMBOLS.rewardToken}.`,
@@ -154,14 +174,16 @@ function mapStakeEvent(log) {
 
 function mapWithdrawStakeEvent(log) {
   const args = log.args;
+  const actorAddress = args.user;
 
   return createActivity(log, {
     type: "UNSTAKE",
     title: "Withdraw LP",
-    user: shortAddress(args.user),
+    actorAddress,
+    user: shortAddress(actorAddress),
     primary: `${safeFormat(args.amount)} ${SYMBOLS.lpToken}`,
     secondary: "Farm withdraw",
-    description: `${shortAddress(args.user)} withdrew ${safeFormat(
+    description: `${shortAddress(actorAddress)} withdrew ${safeFormat(
       args.amount,
       6
     )} ${SYMBOLS.lpToken} from the farm.`,
@@ -170,14 +192,16 @@ function mapWithdrawStakeEvent(log) {
 
 function mapRewardPaidEvent(log) {
   const args = log.args;
+  const actorAddress = args.user;
 
   return createActivity(log, {
     type: "CLAIM",
     title: "Claim Reward",
-    user: shortAddress(args.user),
+    actorAddress,
+    user: shortAddress(actorAddress),
     primary: `${safeFormat(args.reward)} ${SYMBOLS.rewardToken}`,
     secondary: "Reward claimed",
-    description: `${shortAddress(args.user)} claimed ${safeFormat(
+    description: `${shortAddress(actorAddress)} claimed ${safeFormat(
       args.reward,
       6
     )} ${SYMBOLS.rewardToken}.`,
