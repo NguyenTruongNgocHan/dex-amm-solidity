@@ -753,6 +753,40 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "getEvidencePermissionSummary",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "canSubmitTradeReceipt",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "canSubmitLiquidityReceipt",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "canSubmitPoolAuditReport",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "canSubmitGovernanceProposal",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getK",
     "outputs": [

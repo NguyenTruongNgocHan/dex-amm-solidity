@@ -1,4 +1,4 @@
-import { FileText, UploadCloud } from "lucide-react";
+import { FileText, Lock, UploadCloud } from "lucide-react";
 import Button from "../../../components/common/Button";
 
 export default function GovernanceProposalCard({
@@ -9,6 +9,8 @@ export default function GovernanceProposalCard({
   proposedFeeBps,
   setProposedFeeBps,
   onUpload,
+  disabled = false,
+  disabledReason = "",
 }) {
   return (
     <section className="dex-panel p-5">
@@ -22,14 +24,22 @@ export default function GovernanceProposalCard({
             <h3 className="font-black text-[var(--text)]">
               Governance Proposal
             </h3>
-            <span className="dex-chip">Proposal</span>
+            <span className="dex-chip">Operator/Admin only</span>
           </div>
 
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
             Store off-chain proposal evidence for AMM governance documents.
+            The smart contract only accepts this evidence type from Operator or Admin.
           </p>
         </div>
       </div>
+
+      {disabled && disabledReason ? (
+        <div className="mt-4 rounded-2xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-3 text-xs font-bold leading-5 text-[var(--warning)]">
+          <Lock size={14} className="mr-2 inline" />
+          {disabledReason}
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-3">
         <input
@@ -37,6 +47,7 @@ export default function GovernanceProposalCard({
           onChange={(event) => setProposalTitle(event.target.value)}
           className="input-shell px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
           placeholder="Proposal title"
+          disabled={disabled}
         />
 
         <textarea
@@ -44,6 +55,7 @@ export default function GovernanceProposalCard({
           onChange={(event) => setProposalDescription(event.target.value)}
           className="input-shell min-h-[96px] resize-none px-4 py-3 text-sm text-[var(--text)] outline-none"
           placeholder="Proposal description"
+          disabled={disabled}
         />
 
         <input
@@ -51,9 +63,10 @@ export default function GovernanceProposalCard({
           onChange={(event) => setProposedFeeBps(event.target.value)}
           className="input-shell px-4 py-3 text-sm font-bold text-[var(--text)] outline-none"
           placeholder="Proposed fee bps"
+          disabled={disabled}
         />
 
-        <Button onClick={onUpload}>
+        <Button onClick={onUpload} disabled={disabled}>
           <UploadCloud size={16} />
           Upload Proposal
         </Button>

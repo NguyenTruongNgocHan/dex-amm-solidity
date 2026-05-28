@@ -1,4 +1,4 @@
-import { UploadCloud } from "lucide-react";
+import { Lock, UploadCloud } from "lucide-react";
 import Button from "../../../components/common/Button";
 
 export default function IPFSActionCard({
@@ -8,6 +8,8 @@ export default function IPFSActionCard({
   description,
   buttonText,
   onClick,
+  disabled = false,
+  disabledReason = "",
 }) {
   return (
     <section className="dex-panel p-5">
@@ -28,7 +30,14 @@ export default function IPFSActionCard({
         </div>
       </div>
 
-      <Button className="mt-5 w-full" onClick={onClick}>
+      {disabled && disabledReason ? (
+        <div className="mt-4 rounded-2xl border border-[var(--warning-border)] bg-[var(--warning-soft)] px-4 py-3 text-xs font-bold leading-5 text-[var(--warning)]">
+          <Lock size={14} className="mr-2 inline" />
+          {disabledReason}
+        </div>
+      ) : null}
+
+      <Button className="mt-5 w-full" onClick={onClick} disabled={disabled}>
         <UploadCloud size={16} />
         {buttonText}
       </Button>

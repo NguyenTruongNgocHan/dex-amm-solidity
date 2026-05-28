@@ -21,6 +21,7 @@ export function getParticipantStatusLabel(status) {
 export default function useAccessProfile(wallet) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const [profile, setProfile] = useState({
     connected: false,
     isAdmin: false,
@@ -32,12 +33,17 @@ export default function useAccessProfile(wallet) {
     participantStatus: PARTICIPANT_STATUS.NONE,
     participantLabel: "Public Trader",
     canTrade: true,
-    canAddLiquidity: true,
-    canUseFarm: true,
+    canAddLiquidity: false,
+    canUseFarm: false,
     canViewDashboard: true,
     canViewAdmin: false,
     canManagePolicy: false,
     canAudit: false,
+    canSubmitTradeReceipt: false,
+    canSubmitLiquidityReceipt: false,
+    canSubmitPoolAuditReport: false,
+    canSubmitGovernanceProposal: false,
+    canUploadTokenList: false,
   });
 
   const amm = useMemo(() => {
@@ -50,10 +56,17 @@ export default function useAccessProfile(wallet) {
       setProfile((prev) => ({
         ...prev,
         connected: false,
-        canTrade: true,
+        canTrade: false,
         canAddLiquidity: false,
         canUseFarm: false,
         canViewAdmin: false,
+        canManagePolicy: false,
+        canAudit: false,
+        canSubmitTradeReceipt: false,
+        canSubmitLiquidityReceipt: false,
+        canSubmitPoolAuditReport: false,
+        canSubmitGovernanceProposal: false,
+        canUploadTokenList: false,
       }));
       return;
     }
@@ -71,6 +84,34 @@ export default function useAccessProfile(wallet) {
         isLpApprovalRequired,
         participantStatusRaw,
       ] = await amm.getRoleSummary(wallet.address);
+
+      let evidencePermission = {
+        canSubmitTradeReceipt: false,
+        canSubmitLiquidityReceipt: false,
+        canSubmitPoolAuditReport: false,
+        canSubmitGovernanceProposal: false,
+      };
+
+      try {
+        const [
+          canSubmitTradeReceipt,
+          canSubmitLiquidityReceipt,
+          canSubmitPoolAuditReport,
+          canSubmitGovernanceProposal,
+        ] = await amm.getEvidencePermissionSummary(wallet.address);
+
+        evidencePermission = {
+          canSubmitTradeReceipt,
+          canSubmitLiquidityReceipt,
+          canSubmitPoolAuditReport,
+          canSubmitGovernanceProposal,
+        };
+      } catch (permissionError) {
+        console.warn(
+          "Evidence permission summary unavailable. Sync frontend ABI after compiling contract.",
+          permissionError
+        );
+      }
 
       const participantStatus = Number(participantStatusRaw);
       const isVerifiedLp =
@@ -95,7 +136,9 @@ export default function useAccessProfile(wallet) {
         canViewDashboard: true,
         canViewAdmin: isAdmin || isOperator || isAuditor,
         canManagePolicy: isAdmin || isOperator,
-        canAudit: isAuditor,
+        canAudit: isAuditor || isAdmin,
+        canUploadTokenList: isOperator || isAdmin,
+        ...evidencePermission,
       });
     } catch (err) {
       console.error(err);

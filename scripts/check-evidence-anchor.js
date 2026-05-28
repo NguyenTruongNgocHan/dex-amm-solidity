@@ -5,7 +5,11 @@ import path from "path";
 const { ethers } = await hre.network.create();
 
 async function main() {
-  const deploymentPath = path.join(process.cwd(), "deployments", "localhost.json");
+  const deploymentPath = path.join(
+    process.cwd(),
+    "deployments",
+    "localhost.json"
+  );
 
   if (!fs.existsSync(deploymentPath)) {
     throw new Error("Missing deployments/localhost.json. Run deploy first.");
@@ -24,10 +28,12 @@ async function main() {
   const subject = ethers.keccak256(
     ethers.toUtf8Bytes(`evidence-check-${Date.now()}`)
   );
+
   const contentHash = ethers.keccak256(
     ethers.toUtf8Bytes("demo-evidence-content")
   );
-  const evidenceURI = "local://evidence-runtime-check";
+
+  const evidenceURI = `ipfs://bafy-demo-evidence-runtime-check-${Date.now()}`;
 
   const before = await amm.getEvidence(subject);
 
@@ -56,7 +62,7 @@ async function main() {
     throw new Error("Evidence URI mismatch after anchoring.");
   }
 
-  console.log("Evidence Registry is working.");
+  console.log("Evidence Registry is working with IPFS URI enforcement.");
 }
 
 main().catch((error) => {

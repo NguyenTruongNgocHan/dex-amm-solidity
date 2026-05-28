@@ -5,10 +5,12 @@ import {
   Cloud,
   Database,
   FileJson,
+  ShieldCheck,
 } from "lucide-react";
 
 import SurfaceCard from "../../components/common/SurfaceCard";
 import { CONTRACTS, SYMBOLS } from "../../config/contracts";
+import useAccessProfile from "../../hooks/useAccessProfile";
 import { getAMM } from "../../lib/contracts";
 import {
   createGovernanceProposal,
@@ -35,6 +37,8 @@ import {
 export default function IPFSPanelCard({ wallet }) {
   const walletAddress = wallet?.address;
   const ipfsRuntime = getIPFSRuntimeStatus();
+  const access = useAccessProfile(wallet);
+  const profile = access.profile;
 
   const [cid, setCid] = useState("");
   const [status, setStatus] = useState("");
@@ -48,13 +52,34 @@ export default function IPFSPanelCard({ wallet }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [verifyResults, setVerifyResults] = useState({});
 
+  const roleBadges = useMemo(() => {
+    if (!profile.connected) return ["Disconnected"];
+
+    const roles = [];
+
+    if (profile.isAdmin) roles.push("Admin");
+    if (profile.isOperator) roles.push("Operator");
+    if (profile.isAuditor) roles.push("Auditor");
+
+    roles.push(profile.participantLabel || "Public Trader");
+
+    return roles;
+  }, [profile]);
+
   const receipts = useMemo(() => {
     refreshKey;
     return getTradeReceipts();
   }, [refreshKey]);
 
+  const tokenListDisabled = !profile.canUploadTokenList;
+  const proposalDisabled = !profile.canSubmitGovernanceProposal;
+
   async function handleUploadTokenList() {
     try {
+      if (!profile.canUploadTokenList) {
+        throw new Error("Only Operator/Admin can upload official token list metadata.");
+      }
+
       setStatus("Uploading token list to Pinata IPFS...");
 
       const tokenList = createTokenList({
@@ -86,6 +111,10 @@ export default function IPFSPanelCard({ wallet }) {
 
   async function handleUploadProposal() {
     try {
+      if (!profile.canSubmitGovernanceProposal) {
+        throw new Error("Only Operator/Admin can upload governance proposal evidence.");
+      }
+
       setStatus("Uploading governance proposal to Pinata IPFS...");
 
       const proposal = createGovernanceProposal({
@@ -260,6 +289,32 @@ export default function IPFSPanelCard({ wallet }) {
         )}
       </div>
 
+      <section className="mt-5 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-black text-[var(--text)]">
+              <ShieldCheck size={16} />
+              Connected Role Context
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {roleBadges.map((role) => (
+                <span key={role} className="dex-chip">
+                  {role}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-2 text-xs font-bold text-[var(--muted)] sm:grid-cols-2">
+            <span>Trade receipt: {profile.canSubmitTradeReceipt ? "Allowed" : "Blocked"}</span>
+            <span>Liquidity receipt: {profile.canSubmitLiquidityReceipt ? "Allowed" : "Blocked"}</span>
+            <span>Audit report: {profile.canSubmitPoolAuditReport ? "Allowed" : "Blocked"}</span>
+            <span>Governance proposal: {profile.canSubmitGovernanceProposal ? "Allowed" : "Blocked"}</span>
+          </div>
+        </div>
+      </section>
+
       <section
         className={`mt-5 rounded-3xl border p-4 ${
           ipfsRuntime.mode === "production-ipfs"
@@ -303,10 +358,12 @@ export default function IPFSPanelCard({ wallet }) {
           <IPFSActionCard
             icon={<FileJson size={18} />}
             title="Token List JSON"
-            tag="Metadata"
-            description={`Upload supported token metadata for ${SYMBOLS.tokenA}, ${SYMBOLS.tokenB}, ${SYMBOLS.lpToken}, reward token, and AMM pair information to real IPFS.`}
+            tag="Operator/Admin only"
+            description={`Upload official supported token metadata for ${SYMBOLS.tokenA}, ${SYMBOLS.tokenB}, ${SYMBOLS.lpToken}, reward token, and AMM pair information to real IPFS.`}
             buttonText="Upload Token List"
             onClick={handleUploadTokenList}
+            disabled={tokenListDisabled}
+            disabledReason="Only Operator/Admin can publish official token list metadata."
           />
 
           <GovernanceProposalCard
@@ -317,6 +374,8 @@ export default function IPFSPanelCard({ wallet }) {
             proposedFeeBps={proposedFeeBps}
             setProposedFeeBps={setProposedFeeBps}
             onUpload={handleUploadProposal}
+            disabled={proposalDisabled}
+            disabledReason="Only Operator/Admin can submit governance proposal evidence."
           />
         </div>
 

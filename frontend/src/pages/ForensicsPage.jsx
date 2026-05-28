@@ -6,6 +6,7 @@ import PageHero from "../components/common/PageHero";
 import SurfaceCard from "../components/common/SurfaceCard";
 import useSystemEvents from "../hooks/useSystemEvents";
 import useAMMData from "../hooks/useAMMData";
+import useAccessProfile from "../hooks/useAccessProfile";
 import { getAMM } from "../lib/contracts";
 import {
   evidenceURIFromCid,
@@ -31,6 +32,8 @@ export default function ForensicsPage({
 }) {
   const activity = useSystemEvents(wallet.provider, activityRefreshKey, 180);
   const amm = useAMMData(wallet.provider, wallet.address);
+  const access = useAccessProfile(wallet);
+  const profile = access.profile;
   const [anchorStatus, setAnchorStatus] = useState("");
 
   const failedTransactions = useMemo(() => getFailedTransactions(), []);
@@ -47,12 +50,29 @@ export default function ForensicsPage({
 
   const summary = useMemo(() => summarizeSignals(signals), [signals]);
 
+  const roleLabel = useMemo(() => {
+    const roles = [];
+
+    if (profile.isAdmin) roles.push("Admin");
+    if (profile.isOperator) roles.push("Operator");
+    if (profile.isAuditor) roles.push("Auditor");
+
+    roles.push(profile.participantLabel || "Public Trader");
+
+    return profile.connected ? roles.join(" / ") : "Disconnected";
+  }, [profile]);
+
   const report = useMemo(
     () => ({
       type: "pool-audit-report",
       project: "DEXCK AMM",
       generatedAt: new Date().toISOString(),
-      generatedBy: wallet.address || "disconnected",
+      generatedByHash: wallet.address
+        ? hashJsonContent({
+            type: "wallet",
+            address: wallet.address.toLowerCase(),
+          })
+        : "disconnected",
       summary,
       pool: {
         reserveA: amm.data.reserveA,
@@ -63,6 +83,8 @@ export default function ForensicsPage({
       signals,
       timeline: timeline.slice(0, 50),
       note: "This forensic report is generated from on-chain events and frontend-captured failed attempts. It flags suspicious patterns for auditor review, not automatic fraud conclusion.",
+      privacyNote:
+        "Raw wallet address is not stored in this report. The report stores generatedByHash for privacy-aware evidence.",
     }),
     [wallet.address, summary, amm.data, signals, timeline]
   );
@@ -73,11 +95,15 @@ export default function ForensicsPage({
 
   async function handleAnchorReport() {
     try {
+      if (!profile.canSubmitPoolAuditReport) {
+        throw new Error("Only Auditor/Admin can anchor forensic report evidence.");
+      }
+
       if (!wallet?.signer) {
         throw new Error("Connect wallet to anchor forensic report.");
       }
 
-      setAnchorStatus("Uploading forensic report...");
+      setAnchorStatus("Uploading forensic report to Pinata IPFS...");
 
       const upload = await uploadJsonToIPFS(
         report,
@@ -85,11 +111,13 @@ export default function ForensicsPage({
       );
 
       const ammContract = getAMM(wallet.signer);
+
       const subject = hashJsonContent({
         type: "forensic-report-subject",
         generatedAt: report.generatedAt,
-        generatedBy: wallet.address,
+        generatedByHash: report.generatedByHash,
       });
+
       const contentHash = hashJsonContent(report);
       const evidenceURI = evidenceURIFromCid(upload.cid);
 
@@ -174,6 +202,8 @@ export default function ForensicsPage({
               anchorStatus={anchorStatus}
               onDownload={handleDownloadReport}
               onAnchor={handleAnchorReport}
+              canAnchor={profile.canSubmitPoolAuditReport}
+              roleLabel={roleLabel}
             />
 
             <ForensicTimeline items={timeline} />

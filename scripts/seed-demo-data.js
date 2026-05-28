@@ -10,6 +10,10 @@ function hashJson(data) {
   return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(data)));
 }
 
+function demoIpfsUri(label) {
+  return `ipfs://bafy-demo-${label}-${Date.now()}`;
+}
+
 async function safeTx(label, action) {
   try {
     console.log(`\n▶ ${label}`);
@@ -34,24 +38,26 @@ async function anchorEvidence({ amm, signer, subject, evidenceType, data, uri })
     return null;
   }
 
-  const tx = await amm.connect(signer).submitEvidence(
-    subject,
-    evidenceType,
-    contentHash,
-    uri
-  );
+  const tx = await amm
+    .connect(signer)
+    .submitEvidence(subject, evidenceType, contentHash, uri);
 
   const receipt = await tx.wait();
 
   console.log(`  Evidence anchored: ${tx.hash}`);
   console.log(`  Evidence type: ${evidenceType}`);
+  console.log(`  Content hash: ${contentHash}`);
   console.log(`  URI: ${uri}`);
 
   return { tx, receipt, contentHash };
 }
 
 async function main() {
-  const deploymentPath = path.join(process.cwd(), "deployments", "localhost.json");
+  const deploymentPath = path.join(
+    process.cwd(),
+    "deployments",
+    "localhost.json"
+  );
 
   if (!fs.existsSync(deploymentPath)) {
     throw new Error("Missing deployments/localhost.json. Run deploy first.");
@@ -96,21 +102,40 @@ async function main() {
   console.log("\nPreparing demo balances...");
 
   for (const account of [operator, auditor, publicTrader, whaleTrader]) {
-    await (await tokenA.connect(admin).transfer(account.address, toWei(25000))).wait();
-    await (await tokenB.connect(admin).transfer(account.address, toWei(25000))).wait();
+    await (
+      await tokenA.connect(admin).transfer(account.address, toWei(25000))
+    ).wait();
+
+    await (
+      await tokenB.connect(admin).transfer(account.address, toWei(25000))
+    ).wait();
 
     console.log(`  Funded ${account.address} with 25,000 DTA + 25,000 DTB`);
   }
 
-  await (await tokenA.connect(operator).approve(await amm.getAddress(), toWei(10000))).wait();
-  await (await tokenB.connect(operator).approve(await amm.getAddress(), toWei(10000))).wait();
+  await (
+    await tokenA.connect(operator).approve(await amm.getAddress(), toWei(10000))
+  ).wait();
+
+  await (
+    await tokenB.connect(operator).approve(await amm.getAddress(), toWei(10000))
+  ).wait();
 
   await safeTx("Operator adds 2,000 DTA + 2,000 DTB liquidity", () =>
     amm.connect(operator).addLiquidity(toWei(2000), toWei(2000))
   );
 
-  await (await tokenA.connect(publicTrader).approve(await amm.getAddress(), toWei(5000))).wait();
-  await (await tokenB.connect(publicTrader).approve(await amm.getAddress(), toWei(5000))).wait();
+  await (
+    await tokenA
+      .connect(publicTrader)
+      .approve(await amm.getAddress(), toWei(5000))
+  ).wait();
+
+  await (
+    await tokenB
+      .connect(publicTrader)
+      .approve(await amm.getAddress(), toWei(5000))
+  ).wait();
 
   const normalSwap = await safeTx("Public Trader swaps 100 DTA → DTB", () =>
     amm.connect(publicTrader).swapExactTokenAForTokenB(toWei(100), 1)
@@ -137,11 +162,15 @@ async function main() {
       subject: normalSwap.tx.hash,
       evidenceType: 1,
       data: receiptData,
-      uri: `local://seed/trade-receipt-${normalSwap.tx.hash}`,
+      uri: demoIpfsUri(`trade-receipt-${normalSwap.tx.hash.slice(2, 10)}`),
     });
   }
 
-  await (await tokenA.connect(whaleTrader).approve(await amm.getAddress(), toWei(15000))).wait();
+  await (
+    await tokenA
+      .connect(whaleTrader)
+      .approve(await amm.getAddress(), toWei(15000))
+  ).wait();
 
   const whaleSwap = await safeTx("Whale Trader swaps 10,000 DTA → DTB", () =>
     amm.connect(whaleTrader).swapExactTokenAForTokenB(toWei(10000), 1)
@@ -168,14 +197,18 @@ async function main() {
       subject: whaleSwap.tx.hash,
       evidenceType: 1,
       data: whaleReceipt,
-      uri: `local://seed/whale-trade-receipt-${whaleSwap.tx.hash}`,
+      uri: demoIpfsUri(`whale-trade-receipt-${whaleSwap.tx.hash.slice(2, 10)}`),
     });
   }
 
   const operatorLpBalance = await lpToken.balanceOf(operator.address);
 
   if (operatorLpBalance > 0n) {
-    await (await lpToken.connect(operator).approve(await amm.getAddress(), operatorLpBalance / 2n)).wait();
+    await (
+      await lpToken
+        .connect(operator)
+        .approve(await amm.getAddress(), operatorLpBalance / 2n)
+    ).wait();
 
     await safeTx("Operator removes half of owned LP liquidity", () =>
       amm.connect(operator).removeLiquidity(operatorLpBalance / 2n)
@@ -185,7 +218,11 @@ async function main() {
   const adminLpBalance = await lpToken.balanceOf(admin.address);
 
   if (adminLpBalance > 0n) {
-    await (await lpToken.connect(admin).approve(await stakingRewards.getAddress(), toWei(500))).wait();
+    await (
+      await lpToken
+        .connect(admin)
+        .approve(await stakingRewards.getAddress(), toWei(500))
+    ).wait();
 
     await safeTx("Admin stakes 500 ALP into farming contract", () =>
       stakingRewards.connect(admin).stake(toWei(500))
@@ -199,7 +236,7 @@ async function main() {
   await safeTx("Auditor submits audit note", () =>
     amm
       .connect(auditor)
-      .submitAuditNote(auditSubject, "local://seed/audit-note-risk-review")
+      .submitAuditNote(auditSubject, demoIpfsUri("audit-note-risk-review"))
   );
 
   const governanceData = {
@@ -207,7 +244,9 @@ async function main() {
     title: "Future AMM Formula Upgrade",
     description:
       "If the DEX later supports another AMM formula, deploy a new pool contract and migrate liquidity through governance and evidence anchoring.",
-    proposer: operator.address,
+    proposerHash: ethers.keccak256(
+      ethers.toUtf8Bytes(`wallet:${operator.address.toLowerCase()}`)
+    ),
     createdAt: new Date().toISOString(),
   };
 
@@ -220,7 +259,7 @@ async function main() {
     }),
     evidenceType: 4,
     data: governanceData,
-    uri: "local://seed/governance-formula-upgrade",
+    uri: demoIpfsUri("governance-formula-upgrade"),
   });
 
   const forensicReport = {
@@ -246,7 +285,7 @@ async function main() {
     }),
     evidenceType: 3,
     data: forensicReport,
-    uri: "local://seed/forensic-report",
+    uri: demoIpfsUri("forensic-report"),
   });
 
   const [reserveA, reserveB] = await amm.getReserves();
@@ -257,10 +296,7 @@ async function main() {
   console.log("Reserve DTA:", ethers.formatUnits(reserveA, 18));
   console.log("Reserve DTB:", ethers.formatUnits(reserveB, 18));
   console.log("Admin ALP:", ethers.formatUnits(await lpToken.balanceOf(admin.address), 18));
-  console.log(
-    "Operator ALP:",
-    ethers.formatUnits(await lpToken.balanceOf(operator.address), 18)
-  );
+  console.log("Operator ALP:", ethers.formatUnits(await lpToken.balanceOf(operator.address), 18));
   console.log("");
   console.log("Open frontend and check:");
   console.log("- Trade chart");

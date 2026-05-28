@@ -61,59 +61,15 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
     mapping(address => ParticipantProfile) private participantProfiles;
     mapping(bytes32 => EvidenceRecord) private evidenceRecords;
 
-    event LiquidityAdded(
-        address indexed provider,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidityMinted
-    );
-
-    event LiquidityRemoved(
-        address indexed provider,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 liquidityBurned
-    );
-
-    event Swapped(
-        address indexed trader,
-        address indexed tokenIn,
-        uint256 amountIn,
-        address indexed tokenOut,
-        uint256 amountOut
-    );
-
+    event LiquidityAdded(address indexed provider, uint256 amountA, uint256 amountB, uint256 liquidityMinted);
+    event LiquidityRemoved(address indexed provider, uint256 amountA, uint256 amountB, uint256 liquidityBurned);
+    event Swapped(address indexed trader, address indexed tokenIn, uint256 amountIn, address indexed tokenOut, uint256 amountOut);
     event TradingStatusChanged(address indexed operator, bool enabled);
-
-    event TokenWhitelistUpdated(
-        address indexed operator,
-        address indexed token,
-        bool whitelisted
-    );
-
-    event LiquidityProviderPolicyUpdated(
-        address indexed operator,
-        bool approvalRequired
-    );
-
-    event ParticipantRequested(
-        address indexed participant,
-        bytes32 indexed profileHash,
-        string evidenceURI
-    );
-
-    event ParticipantReviewed(
-        address indexed participant,
-        uint8 status,
-        address indexed reviewer,
-        string evidenceURI
-    );
-
-    event AuditNoteSubmitted(
-        address indexed auditor,
-        bytes32 indexed subject,
-        string noteURI
-    );
+    event TokenWhitelistUpdated(address indexed operator, address indexed token, bool whitelisted);
+    event LiquidityProviderPolicyUpdated(address indexed operator, bool approvalRequired);
+    event ParticipantRequested(address indexed participant, bytes32 indexed profileHash, string evidenceURI);
+    event ParticipantReviewed(address indexed participant, uint8 status, address indexed reviewer, string evidenceURI);
+    event AuditNoteSubmitted(address indexed auditor, bytes32 indexed subject, string noteURI);
 
     event EvidenceAnchored(
         bytes32 indexed subject,
@@ -162,10 +118,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
 
     modifier onlyApprovedLiquidityProvider() {
         if (liquidityProviderApprovalRequired) {
-            require(
-                participantProfiles[msg.sender].status == PARTICIPANT_APPROVED,
-                "LP approval required"
-            );
+            require(participantProfiles[msg.sender].status == PARTICIPANT_APPROVED, "LP approval required");
         }
         _;
     }
@@ -183,41 +136,27 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         emit TradingStatusChanged(msg.sender, enabled);
     }
 
-    function setTokenWhitelist(
-        address token,
-        bool whitelisted
-    ) external onlyRole(OPERATOR_ROLE) {
+    function setTokenWhitelist(address token, bool whitelisted) external onlyRole(OPERATOR_ROLE) {
         require(token != address(0), "Invalid token");
-        require(
-            token == address(tokenA) || token == address(tokenB),
-            "Unsupported pool token"
-        );
+        require(token == address(tokenA) || token == address(tokenB), "Unsupported pool token");
 
         whitelistedTokens[token] = whitelisted;
-
         emit TokenWhitelistUpdated(msg.sender, token, whitelisted);
     }
 
-    function setLiquidityProviderApprovalRequired(
-        bool required
-    ) external onlyRole(OPERATOR_ROLE) {
+    function setLiquidityProviderApprovalRequired(bool required) external onlyRole(OPERATOR_ROLE) {
         liquidityProviderApprovalRequired = required;
-
         emit LiquidityProviderPolicyUpdated(msg.sender, required);
     }
 
-    function requestLiquidityProviderApproval(
-        bytes32 profileHash,
-        string calldata evidenceURI
-    ) external {
+    function requestLiquidityProviderApproval(bytes32 profileHash, string calldata evidenceURI) external {
         require(profileHash != bytes32(0), "Invalid profile hash");
         require(bytes(evidenceURI).length > 0, "Invalid evidence URI");
 
         ParticipantProfile storage profile = participantProfiles[msg.sender];
 
         require(
-            profile.status == PARTICIPANT_NONE ||
-                profile.status == PARTICIPANT_REJECTED,
+            profile.status == PARTICIPANT_NONE || profile.status == PARTICIPANT_REJECTED,
             "Request already active"
         );
 
@@ -242,9 +181,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
 
         require(profile.status == PARTICIPANT_PENDING, "No pending request");
 
-        profile.status = approved
-            ? PARTICIPANT_APPROVED
-            : PARTICIPANT_REJECTED;
+        profile.status = approved ? PARTICIPANT_APPROVED : PARTICIPANT_REJECTED;
         profile.reviewedAt = block.timestamp;
         profile.reviewer = msg.sender;
 
@@ -252,20 +189,13 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
             profile.evidenceURI = reviewEvidenceURI;
         }
 
-        emit ParticipantReviewed(
-            participant,
-            profile.status,
-            msg.sender,
-            profile.evidenceURI
-        );
+        emit ParticipantReviewed(participant, profile.status, msg.sender, profile.evidenceURI);
     }
 
-    function submitAuditNote(
-        bytes32 subject,
-        string calldata noteURI
-    ) external onlyRole(AUDITOR_ROLE) {
+    function submitAuditNote(bytes32 subject, string calldata noteURI) external onlyRole(AUDITOR_ROLE) {
         require(subject != bytes32(0), "Invalid subject");
         require(bytes(noteURI).length > 0, "Invalid note URI");
+        require(_isIPFSURI(noteURI), "Audit note must use IPFS URI");
 
         emit AuditNoteSubmitted(msg.sender, subject, noteURI);
     }
@@ -279,8 +209,10 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         require(subject != bytes32(0), "Invalid subject");
         require(contentHash != bytes32(0), "Invalid content hash");
         require(bytes(evidenceURI).length > 0, "Invalid evidence URI");
-        require(evidenceType >= 1 && evidenceType <= 4, "Invalid evidence type");
+        require(_isIPFSURI(evidenceURI), "Evidence must use IPFS URI");
+        require(_isValidEvidenceType(evidenceType), "Invalid evidence type");
         require(evidenceRecords[subject].submittedAt == 0, "Evidence exists");
+        require(_canSubmitEvidence(msg.sender, evidenceType), "Not allowed for evidence type");
 
         evidenceRecords[subject] = EvidenceRecord({
             evidenceType: evidenceType,
@@ -290,19 +222,10 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
             submittedAt: block.timestamp
         });
 
-        emit EvidenceAnchored(
-            subject,
-            evidenceType,
-            contentHash,
-            evidenceURI,
-            msg.sender,
-            block.timestamp
-        );
+        emit EvidenceAnchored(subject, evidenceType, contentHash, evidenceURI, msg.sender, block.timestamp);
     }
 
-    function getEvidence(
-        bytes32 subject
-    )
+    function getEvidence(bytes32 subject)
         external
         view
         returns (
@@ -324,9 +247,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         );
     }
 
-    function getParticipantProfile(
-        address account
-    )
+    function getParticipantProfile(address account)
         external
         view
         returns (
@@ -370,9 +291,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         );
     }
 
-    function getRoleSummary(
-        address account
-    )
+    function getRoleSummary(address account)
         external
         view
         returns (
@@ -396,10 +315,25 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         );
     }
 
-    function addLiquidity(
-        uint256 amountADesired,
-        uint256 amountBDesired
-    )
+    function getEvidencePermissionSummary(address account)
+        external
+        view
+        returns (
+            bool canSubmitTradeReceipt,
+            bool canSubmitLiquidityReceipt,
+            bool canSubmitPoolAuditReport,
+            bool canSubmitGovernanceProposal
+        )
+    {
+        return (
+            _canSubmitEvidence(account, EVIDENCE_TRADE_RECEIPT),
+            _canSubmitEvidence(account, EVIDENCE_LIQUIDITY_RECEIPT),
+            _canSubmitEvidence(account, EVIDENCE_POOL_AUDIT_REPORT),
+            _canSubmitEvidence(account, EVIDENCE_GOVERNANCE_PROPOSAL)
+        );
+    }
+
+    function addLiquidity(uint256 amountADesired, uint256 amountBDesired)
         external
         nonReentrant
         whenNotPaused
@@ -429,9 +363,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         return _addLiquidity(amountADesired, amountBDesired, minLiquidity);
     }
 
-    function removeLiquidity(
-        uint256 liquidityAmount
-    )
+    function removeLiquidity(uint256 liquidityAmount)
         external
         nonReentrant
         whenNotPaused
@@ -459,10 +391,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         return _removeLiquidity(liquidityAmount, minAmountA, minAmountB);
     }
 
-    function swapExactTokenAForTokenB(
-        uint256 amountAIn,
-        uint256 minAmountBOut
-    )
+    function swapExactTokenAForTokenB(uint256 amountAIn, uint256 minAmountBOut)
         external
         nonReentrant
         whenNotPaused
@@ -489,10 +418,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         return _swap(address(tokenA), amountAIn, minAmountBOut);
     }
 
-    function swapExactTokenBForTokenA(
-        uint256 amountBIn,
-        uint256 minAmountAOut
-    )
+    function swapExactTokenBForTokenA(uint256 amountBIn, uint256 minAmountAOut)
         external
         nonReentrant
         whenNotPaused
@@ -537,43 +463,30 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
         return (reserveA * PRICE_PRECISION) / reserveB;
     }
 
-    function getAmountOut(
-        address tokenIn,
-        uint256 amountIn
-    ) public view returns (uint256 amountOut) {
+    function getAmountOut(address tokenIn, uint256 amountIn) public view returns (uint256 amountOut) {
         require(amountIn > 0, "Invalid input");
         require(reserveA > 0 && reserveB > 0, "Empty pool");
 
-        uint256 amountInWithFee = (amountIn * FEE_NUMERATOR) /
-            FEE_DENOMINATOR;
+        uint256 amountInWithFee = (amountIn * FEE_NUMERATOR) / FEE_DENOMINATOR;
 
         if (tokenIn == address(tokenA)) {
-            amountOut =
-                (amountInWithFee * reserveB) /
-                (reserveA + amountInWithFee);
+            amountOut = (amountInWithFee * reserveB) / (reserveA + amountInWithFee);
         } else if (tokenIn == address(tokenB)) {
-            amountOut =
-                (amountInWithFee * reserveA) /
-                (reserveB + amountInWithFee);
+            amountOut = (amountInWithFee * reserveA) / (reserveB + amountInWithFee);
         } else {
             revert("Unsupported token");
         }
     }
 
-    function quoteAddLiquidity(
-        uint256 amountADesired,
-        uint256 amountBDesired
-    ) public view returns (uint256 liquidityMinted) {
-        (, , liquidityMinted) = quoteAddLiquidityAmounts(
-            amountADesired,
-            amountBDesired
-        );
+    function quoteAddLiquidity(uint256 amountADesired, uint256 amountBDesired)
+        public
+        view
+        returns (uint256 liquidityMinted)
+    {
+        (, , liquidityMinted) = quoteAddLiquidityAmounts(amountADesired, amountBDesired);
     }
 
-    function quoteAddLiquidityAmounts(
-        uint256 amountADesired,
-        uint256 amountBDesired
-    )
+    function quoteAddLiquidityAmounts(uint256 amountADesired, uint256 amountBDesired)
         public
         view
         returns (
@@ -621,10 +534,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
 
         require(amountAUsed > 0 && amountBUsed > 0, "Zero liquidity amount");
         require(quotedLiquidity > 0, "Zero liquidity minted");
-        require(
-            quotedLiquidity >= minLiquidity,
-            "Insufficient liquidity minted"
-        );
+        require(quotedLiquidity >= minLiquidity, "Insufficient liquidity minted");
 
         tokenA.safeTransferFrom(msg.sender, address(this), amountAUsed);
         tokenB.safeTransferFrom(msg.sender, address(this), amountBUsed);
@@ -635,12 +545,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
 
         lpToken.mint(msg.sender, quotedLiquidity);
 
-        emit LiquidityAdded(
-            msg.sender,
-            amountAUsed,
-            amountBUsed,
-            quotedLiquidity
-        );
+        emit LiquidityAdded(msg.sender, amountAUsed, amountBUsed, quotedLiquidity);
 
         return quotedLiquidity;
     }
@@ -652,10 +557,7 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
     ) private returns (uint256 amountA, uint256 amountB) {
         require(liquidityAmount > 0, "Invalid liquidity");
         require(totalLiquidity > 0, "Empty pool");
-        require(
-            lpToken.balanceOf(msg.sender) >= liquidityAmount,
-            "Not enough LP"
-        );
+        require(lpToken.balanceOf(msg.sender) >= liquidityAmount, "Not enough LP");
 
         amountA = (liquidityAmount * reserveA) / totalLiquidity;
         amountB = (liquidityAmount * reserveB) / totalLiquidity;
@@ -711,13 +613,59 @@ contract SimpleAMM is AccessControl, Pausable, ReentrancyGuard {
             reserveA = reserveOut;
         }
 
-        emit Swapped(
-            msg.sender,
-            tokenIn,
-            amountIn,
-            address(outputToken),
-            amountOut
-        );
+        emit Swapped(msg.sender, tokenIn, amountIn, address(outputToken), amountOut);
+    }
+
+    function _isValidEvidenceType(uint8 evidenceType) private pure returns (bool) {
+        return
+            evidenceType == EVIDENCE_TRADE_RECEIPT ||
+            evidenceType == EVIDENCE_LIQUIDITY_RECEIPT ||
+            evidenceType == EVIDENCE_POOL_AUDIT_REPORT ||
+            evidenceType == EVIDENCE_GOVERNANCE_PROPOSAL;
+    }
+
+    function _canSubmitEvidence(address account, uint8 evidenceType) private view returns (bool) {
+        if (hasRole(DEFAULT_ADMIN_ROLE, account)) {
+            return true;
+        }
+
+        if (evidenceType == EVIDENCE_TRADE_RECEIPT) {
+            return true;
+        }
+
+        if (evidenceType == EVIDENCE_LIQUIDITY_RECEIPT) {
+            return
+                hasRole(OPERATOR_ROLE, account) ||
+                participantProfiles[account].status == PARTICIPANT_APPROVED ||
+                lpToken.balanceOf(account) > 0;
+        }
+
+        if (evidenceType == EVIDENCE_POOL_AUDIT_REPORT) {
+            return hasRole(AUDITOR_ROLE, account);
+        }
+
+        if (evidenceType == EVIDENCE_GOVERNANCE_PROPOSAL) {
+            return hasRole(OPERATOR_ROLE, account);
+        }
+
+        return false;
+    }
+
+    function _isIPFSURI(string calldata evidenceURI) private pure returns (bool) {
+        bytes calldata value = bytes(evidenceURI);
+
+        if (value.length < 7) {
+            return false;
+        }
+
+        return
+            value[0] == bytes1("i") &&
+            value[1] == bytes1("p") &&
+            value[2] == bytes1("f") &&
+            value[3] == bytes1("s") &&
+            value[4] == bytes1(":") &&
+            value[5] == bytes1("/") &&
+            value[6] == bytes1("/");
     }
 
     function _sqrt(uint256 x) private pure returns (uint256 y) {
